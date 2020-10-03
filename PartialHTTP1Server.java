@@ -1,6 +1,6 @@
 import java.net.*;
 import java.text.*;
-import java.time.Year;
+import java.time.*;
 import java.util.*;
 import java.io.*;
 import java.util.concurrent.*;
@@ -16,10 +16,16 @@ public class PartialHTTP1Server {
         ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[0]));
         System.out.println("Server ready for connection ...");
         while (true) {
-            Socket clientSocket = serverSocket.accept();
-            Future<?> f = pool.submit(new ServerThread(clientSocket));
-            futures.add(f);
-            System.out.println(futures.size()); // gives the size of the list of threads
+            if (futures.size() < 50) {
+                Socket clientSocket = serverSocket.accept();
+                Future<?> f = pool.submit(new ServerThread(clientSocket));
+                futures.add(f);
+                // System.out.println(futures.size()); // gives the size of the list of threads
+            } else {
+                Socket clientSocket = serverSocket.accept();
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                out.println("HTTP/1.0 503 Service Unavailable");
+            }
         }
     }
 }
@@ -32,50 +38,66 @@ class ServerThread extends Thread {
     }
 
     public void run() {
-        System.out.println("IN THREAD");
         try (PrintWriter out = new PrintWriter(this.socket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));) {
             String inputLine;
-            String status;
+            String status = "";
+            List<String> response = new ArrayList<>();
             while ((inputLine = in.readLine()) != null) {
                 String[] newInput = inputLine.trim().split("\\s+");
-                for (int i = 0; i < newInput.length; i++) {
-                    System.out.println(newInput[i]);
-                }
-                if (newInput[2].equals("HTTP") || newInput[2].equals("HTTP/")) {
-                    out.println("HTTP/1.0" + response(0));
+                if (!"HTTP".equals(newInput[2].split("/")[0]) || newInput[2] == null) {
+                    out.println("HTTP/1.0 " + response(2));
+                    status = response(2);
                 } else if (newInput[2].split("/")[0].equals("HTTP")) {
                     if (0 <= Float.parseFloat(newInput[2].split("/")[1])
                             && 1.0 >= Float.parseFloat(newInput[2].split("/")[1])) {
-                        System.out.println("yes 0 to 1.0 good"); // good
-
                         if (newInput[0].equals("GET")) {
                             // get method
                             // args newInput[1] and out
-                            get(newInput[1], out);
-                            System.out.println("GET METHOD");
+                            response = get(newInput[1], status);
 
                         } else if (newInput[0].equals("POST")) {
                             // post method
                             // args newInput[1] and out
-                            post(newInput[1], out);
-                            System.out.println("POSTMETHOD");
+                            response = post(newInput[1], status);
 
                         } else if (newInput[0].equals("HEAD")) {
                             // head method
                             // args newInput[1] and out
-                            head(newInput[1], out);
+                            response = head(newInput[1], status);
+
+                        } else if (newInput[0].equals("PUT")) {
+                            status = response(7);
+                            response.set(0, status);
+                        } else if (newInput[0].equals("DELETE")) {
+                            status = response(7);
+                            response.set(0, status);
+                        } else if (newInput[0].equals("LINK")) {
+                            status = response(7);
+                            response.set(0, status);
+                        } else if (newInput[0].equals("UNLINK")) {
+                            status = response(7);
+                            response.set(0, status);
+                        }  else {
+                            status = response(2);
+                            response.set(0, status);
                         }
                     } else {
                         // version not supported
                         status = response(9);
+                        response.set(0, status);
+
                     }
                 } else {
-                    // 400 Bad Request
+                    // bad request
+                    status = response(2);
+                    response.set(0, status);
+
                 }
+                // System.out.println("HTTP/1.0 " + response.get(0) + "\n" + response.get(1));
+                out.println("HTTP/1.0 " + response.get(0) + "\n" + response.get(1));
                 // out.println(inputLine);
             }
-            System.out.println("not here yea");
             socket.close();
         } catch (IOException e) {
             System.out.println("Exception caught when trying listen for a connection");
@@ -83,100 +105,351 @@ class ServerThread extends Thread {
             e.printStackTrace();
         }
     }
+    public List<String> get(String newInput, String r) {
 
-    public void get(String newInput, PrintWriter out) {
-        System.out.println("GETMETHOD");
-
-    }
-
-    public void post(String newInput, PrintWriter out) {
-        System.out.println("POSTMETHOD");
-
-    }
-
-    public void head(String newInput, PrintWriter out) {
-        System.out.println("HEADMETHOD");
-        System.out.println(newInput);
+        List<String> response = new ArrayList<>();
+        response.add(r);
+        String para = "";
+        String header = "";
 
         try {
             File file = new File(newInput);
             if (file.exists()) {
-                long timeStamp = file.lastModified();
-                DateFormat formatter = new SimpleDateFormat("E, dd MM yyyy hh:mm:ss zzz");
+                if (file.canRead()) {
+                    String filename = file.getName();
 
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTimeInMillis(timeStamp);
-                // System.out.println(formatter.format(calendar.getTime()));
-                String lastModified = formatter.format(calendar.getTime()); // last modified
-                out.println("Last-Modified Since: " + lastModified);
-
-                Calendar now = Calendar.getInstance();
-                now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
-                // System.out.println(formatter.format(now.getTime()));
-                String expire = formatter.format(now.getTime()); // expire
-                out.println("Expire: " + expire);
-
-                long filelength = file.length(); // file length
-                out.println("Content-length: " + filelength);
-
-                String allow = "GET, POST, HEAD"; // allow
-                out.println("Allow: " + allow);
-
-                String contentIncoding = "Identity"; // content incoding
-                out.println("Content-Encoding: " + contentIncoding);
-
-                String filetype;
-                String filename = file.getName();
-                switch (filename.split(".")[1]) {
+                    String filetype = "";
+                    switch (filename.split("\\.")[1]) {
                     case "txt":
-                        filetype = "text/plain";
-                        break;
+                    filetype = "text/plain";
+                    break;
                     case "html":
-                        filetype = "text/html";
-                        break;
-
+                    filetype = "text/html";
+                    break;
                     case "gif":
-                        filetype = "image/gif";
-                        break;
+                    filetype = "image/gif";
+                    break;
                     case "jpeg":
-                        filetype = "image/jpeg";
-                        break;
+                    filetype = "image/jpeg";
+                    break;
                     case "png":
-                        filetype = "image/png";
-                        break;
-
+                    filetype = "image/png";
+                    break;
                     case "ocetet-stream":
-                        filetype = "application/octet-stream";
-                        break;
+                    filetype = "application/octet-stream";
+                    break;
                     case "pdf":
-                        filetype = "application/pdf";
-                        break;
+                    filetype = "application/pdf";
+                    break;
                     case "x-gzip":
-                        filetype = "application/x-gzip";
-                        break;
+                    filetype = "application/x-gzip";
+                    break;
                     case "zip":
-                        filetype = "application/zip";
-                        break;
+                    filetype = "application/zip";
+                    break;
                     default:
-                        filetype = "application/octet-stream";
-                        break;
-                } // content-type is working
-                out.println("Content-Type: " + filetype);
+                    filetype = "application/octet-stream";
+                    break;
+                    } // content-type is working
 
-                // writing the file
-                Scanner myReader = new Scanner(file);
-                while (myReader.hasNextLine()) {
-                    String data = myReader.nextLine();
-                    System.out.println(data);
+                    header += "Content-Type: " + filetype + "\n";
+
+                    long filelength = file.length(); // file length
+                    header += "Content-Length: " + filelength + "\n";
+
+                    long timeStamp = file.lastModified();
+                    DateFormat formatter = new SimpleDateFormat("E, dd MM yyyy hh:mm:ss zzz");
+
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(timeStamp);
+                    String lastModified = formatter.format(calendar.getTime()); // last modified
+                    header += "Last-Modified: " + lastModified + "\n";
+
+                    long IfModSince = file.lastModified();
+                    Calendar newCalendar = Calendar.getInstance();
+                    newCalendar.setTimeInMillis(IfModSince);
+                    String LastMod = formatter.format(newCalendar.getTime());
+
+                    if (lastModified.equals(LastMod)) {
+                    response.set(0, response(0));
+                    } else {
+                    response.set(0, response(1));
+                    }
+
+                    String contentIncoding = "Identity"; // content incoding
+                    header += "Content-Encoding: " + contentIncoding + "\n";
+
+                    String allow = "GET, POST, HEAD"; // allow
+                    header += "Allow: " + allow + "\n";
+
+                    Calendar now = Calendar.getInstance();
+                    now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
+                    // System.out.println(formatter.format(now.getTime()));
+                    String expire = formatter.format(now.getTime()); // expire
+                    header += "Expire: " + expire + "\n";
+
+                    // writing the file
+                    Scanner myReader = new Scanner(file);
+                    while (myReader.hasNextLine()) {
+                        String data = myReader.nextLine();
+                        para += data + "\n";
+                    }
+                    header += "\n" + para;
+                    response.add(header);
+                    myReader.close();
+
+                    // 200 ok
+                    response.set(0, response(0));
+                } else {
+                    // 400 bad request
+                    response.set(0, response(3));
+
                 }
-                myReader.close();
             } else {
                 // file dosent exist
+                response.set(0, response(4));
+
             }
+
         } catch (FileNotFoundException e) {
             System.out.println("An error occurred.");
             e.printStackTrace();
+
         }
+        return response;
+
+    }
+    public List<String> post(String newInput, String r) {
+
+        List<String> response = new ArrayList<>();
+        response.add(r);
+        String para = "";
+        String header = "";
+
+        try {
+            File file = new File(newInput);
+            if (file.exists()) {
+                System.out.println("HERE4");
+
+                if (file.canRead()) {
+                    String filename = file.getName();
+
+                    String filetype = "";
+                    switch (filename.split("\\.")[1]) {
+                    case "txt":
+                    filetype = "text/plain";
+                    break;
+                    case "html":
+                    filetype = "text/html";
+                    break;
+                    case "gif":
+                    filetype = "image/gif";
+                    break;
+                    case "jpeg":
+                    filetype = "image/jpeg";
+                    break;
+                    case "png":
+                    filetype = "image/png";
+                    break;
+                    case "ocetet-stream":
+                    filetype = "application/octet-stream";
+                    break;
+                    case "pdf":
+                    filetype = "application/pdf";
+                    break;
+                    case "x-gzip":
+                    filetype = "application/x-gzip";
+                    break;
+                    case "zip":
+                    filetype = "application/zip";
+                    break;
+                    default:
+                    filetype = "application/octet-stream";
+                    break;
+                    } // content-type is working
+
+                    header += "Content-Type: " + filetype + "\n";
+
+                    long filelength = file.length(); // file length
+                    header += "Content-Length: " + filelength + "\n";
+
+                    long timeStamp = file.lastModified();
+                    DateFormat formatter = new SimpleDateFormat("E, dd MM yyyy hh:mm:ss zzz");
+
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(timeStamp);
+                    String lastModified = formatter.format(calendar.getTime()); // last modified
+                    header += "Last-Modified: " + lastModified + "\n";
+
+                    long IfModSince = file.lastModified();
+                    Calendar newCalendar = Calendar.getInstance();
+                    newCalendar.setTimeInMillis(IfModSince);
+                    String LastMod = formatter.format(newCalendar.getTime());
+
+                    if (lastModified.equals(LastMod)) {
+                    response.set(0, response(0));
+                    } else {
+                    response.set(0, response(1));
+                    }
+
+                    String contentIncoding = "Identity"; // content incoding
+                    header += "Content-Encoding: " + contentIncoding + "\n";
+
+                    String allow = "GET, POST, HEAD"; // allow
+                    header += "Allow: " + allow + "\n";
+
+                    Calendar now = Calendar.getInstance();
+                    now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
+                    // System.out.println(formatter.format(now.getTime()));
+                    String expire = formatter.format(now.getTime()); // expire
+                    header += "Expire: " + expire + "\n";
+
+                    // writing the file
+                    Scanner myReader = new Scanner(file);
+                    while (myReader.hasNextLine()) {
+                        String data = myReader.nextLine();
+                        para += data + "\n";
+                    }
+                    header += "\n" + para;
+                    response.add(header);
+                    myReader.close();
+
+                    // 200 ok
+                    response.set(0, response(0));
+                } else {
+                    // 400 bad request
+                    response.set(0, response(3));
+
+                }
+            } else {
+                // file dosent exist
+                response.set(0, response(4));
+
+            }
+
+        } catch (FileNotFoundException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+
+        }
+        return response;
+
+    }
+    public List<String> head(String newInput, String r) {
+
+        List<String> response = new ArrayList<>();
+        response.add(r);
+        String para = "";
+        String header = "";
+
+        try {
+            File file = new File(newInput);
+            if (file.exists()) {
+                System.out.println("HERE4");
+
+                if (file.canRead()) {
+                    String filename = file.getName();
+
+                    String filetype = "";
+                    switch (filename.split("\\.")[1]) {
+                    case "txt":
+                    filetype = "text/plain";
+                    break;
+                    case "html":
+                    filetype = "text/html";
+                    break;
+                    case "gif":
+                    filetype = "image/gif";
+                    break;
+                    case "jpeg":
+                    filetype = "image/jpeg";
+                    break;
+                    case "png":
+                    filetype = "image/png";
+                    break;
+                    case "ocetet-stream":
+                    filetype = "application/octet-stream";
+                    break;
+                    case "pdf":
+                    filetype = "application/pdf";
+                    break;
+                    case "x-gzip":
+                    filetype = "application/x-gzip";
+                    break;
+                    case "zip":
+                    filetype = "application/zip";
+                    break;
+                    default:
+                    filetype = "application/octet-stream";
+                    break;
+                    } // content-type is working
+
+                    header += "Content-Type: " + filetype + "\n";
+
+                    long filelength = file.length(); // file length
+                    header += "Content-Length: " + filelength + "\n";
+
+                    long timeStamp = file.lastModified();
+                    DateFormat formatter = new SimpleDateFormat("E, dd MM yyyy hh:mm:ss zzz");
+
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(timeStamp);
+                    String lastModified = formatter.format(calendar.getTime()); // last modified
+                    header += "Last-Modified: " + lastModified + "\n";
+
+                    long IfModSince = file.lastModified();
+                    Calendar newCalendar = Calendar.getInstance();
+                    newCalendar.setTimeInMillis(IfModSince);
+                    String LastMod = formatter.format(newCalendar.getTime());
+
+                    if (lastModified.equals(LastMod)) {
+                    response.set(0, response(0));
+                    } else {
+                    response.set(0, response(1));
+                    }
+
+                    String contentIncoding = "Identity"; // content incoding
+                    header += "Content-Encoding: " + contentIncoding + "\n";
+
+                    String allow = "GET, POST, HEAD"; // allow
+                    header += "Allow: " + allow + "\n";
+
+                    Calendar now = Calendar.getInstance();
+                    now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
+                    // System.out.println(formatter.format(now.getTime()));
+                    String expire = formatter.format(now.getTime()); // expire
+                    header += "Expire: " + expire + "\n";
+
+                    // writing the file
+                    Scanner myReader = new Scanner(file);
+                    while (myReader.hasNextLine()) {
+                        String data = myReader.nextLine();
+                        para += data + "\n";
+                    }
+                    header += "\n" + para;
+                    response.add(header);
+                    myReader.close();
+
+                    // 200 ok
+                    response.set(0, response(0));
+                } else {
+                    // 400 bad request
+                    response.set(0, response(3));
+
+                }
+            } else {
+                // file dosent exist
+                response.set(0, response(4));
+
+            }
+
+        } catch (FileNotFoundException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+
+        }
+        return response;
+
     }
 
     public String response(int i) {
@@ -210,7 +483,7 @@ class ServerThread extends Thread {
                 statusCode = "503 Service Unavailable";
                 break;
             case 9:
-                statusCode = "505 HTTP Version Nor Supported";
+                statusCode = "505 HTTP Version Not Supported";
                 break;
             default:
                 statusCode = "ERR";
@@ -219,21 +492,3 @@ class ServerThread extends Thread {
         return statusCode;
     }
 }
-
-// try (ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[0]));
-// Socket clientSocket = serverSocket.accept();
-// PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-// BufferedReader in = new BufferedReader(new
-// InputStreamReader(clientSocket.getInputStream()));) {
-// String inputLine;
-// while ((inputLine = in.readLine()) != null) {
-// out.println(inputLine);
-// }
-// } catch (IOException e) {
-// System.out.println(
-// "Exception caught when trying to listen on port " + portNumber + " or
-// listening for a connection");
-// System.out.println(e.getMessage());
-// }
-
-// java -cp . PartialHTTP1Server.java 8000
