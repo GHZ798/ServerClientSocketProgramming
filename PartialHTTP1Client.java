@@ -13,14 +13,26 @@ public class PartialHTTP1Client {
         int portNumber = Integer.parseInt(args[1]);
 
         try (Socket echoSocket = new Socket(hostName, portNumber);
-                PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
+                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(echoSocket.getOutputStream()));
                 BufferedReader in = new BufferedReader(new InputStreamReader(echoSocket.getInputStream()));
                 BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))) {
             String userInput;
+            String line;
             while ((userInput = stdIn.readLine()) != null) {
-                out.println(userInput);
-                System.out.println(in.readLine());
+                out.write(userInput);
+                out.newLine();
+                out.flush();
+                System.out.println();
+                while ((line = in.readLine()) != null) {
+                    if (line.equals("null")) {
+                        System.out.println();
+                        break;
+                    } else {
+                        System.out.println(line);
+                    }
+                }
             }
+            out.close();
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host " + hostName);
             System.exit(1);
