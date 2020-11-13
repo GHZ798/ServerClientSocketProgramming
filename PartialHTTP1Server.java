@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class PartialHTTP1Server {
+
   public static void main(String[] args) throws IOException {
     if (args.length != 1) {
       System.err.println("Usage: java EchoServer <port number>");
@@ -130,7 +131,6 @@ class ServerThread extends Thread {
         out.newLine();
         out.flush();
         response.clear();
-        // out.println(inputLine);
       }
       socket.close();
     } catch (IOException e) {
@@ -147,6 +147,7 @@ class ServerThread extends Thread {
     response.add(r);
     String para = "";
     String header = "";
+
     try {
       File file = new File("." + newInput);
       if (file.exists()) {
@@ -190,7 +191,6 @@ class ServerThread extends Thread {
             } // content-type is working
           }
           header += "Content-Type: " + filetype + "\n";
-
           long filelength = file.length(); // file length
           header += "Content-Length: " + filelength + "\n";
 
@@ -214,7 +214,6 @@ class ServerThread extends Thread {
           } else {
             response.set(0, response(1));
           }
-
           String contentIncoding = "identity"; // content incoding
           header += "Content-Encoding: " + contentIncoding + "\n";
 
@@ -223,6 +222,7 @@ class ServerThread extends Thread {
 
           Calendar now = Calendar.getInstance();
           now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
+          // System.out.println(formatter.format(now.getTime()));
           String expire = formatter.format(now.getTime()); // expire
           header += "Expire: " + expire + "\n";
 
@@ -243,7 +243,7 @@ class ServerThread extends Thread {
           response.set(0, response(3));
         }
       } else {
-        // file dosent exist 
+        // file dosent exist 404
         response.set(0, response(4));
       }
     } catch (FileNotFoundException e) {
@@ -413,7 +413,6 @@ class ServerThread extends Thread {
             } // content-type is working
           }
           header += "Content-Type: " + filetype + "\n";
-
           long filelength = file.length(); // file length
           header += "Content-Length: " + filelength + "\n";
 
@@ -437,7 +436,6 @@ class ServerThread extends Thread {
           } else {
             response.set(0, response(1));
           }
-
           String contentIncoding = "identity"; // content incoding
           header += "Content-Encoding: " + contentIncoding + "\n";
 
@@ -467,7 +465,7 @@ class ServerThread extends Thread {
           response.set(0, response(3));
         }
       } else {
-        // file dosent exist
+        // file dosent exist 404
         response.set(0, response(4));
       }
     } catch (FileNotFoundException e) {
