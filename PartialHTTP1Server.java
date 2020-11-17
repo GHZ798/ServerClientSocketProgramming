@@ -133,14 +133,17 @@ class ServerThread extends Thread {
         String outputR;
         try {
           // -- if no index 1 exists skip
+          System.out.println("Inside TRY");;
           response.get(1);
-          outputR = "HTTP/1.0 " + response.get(0) + "\n" + response.get(1);
+          outputR = "HTTP/1.0 " + response.get(0) + System.getProperty("line.separator") + response.get(1);
         } catch (IndexOutOfBoundsException e) {
-          outputR = "HTTP/1.0 " + response.get(0) + "\n";
-        }
-        outputR = "HTTP/1.0 " + response.get(0) + "\n";
+          System.out.println("Inside CATCH");;
 
-        System.out.println(outputR);
+          outputR = "HTTP/1.0 " + response.get(0) + System.getProperty("line.separator");
+        }
+        // outputR = "HTTP/1.0 " + response.get(0) + System.getProperty("line.separator");
+
+        System.out.println("OUTPUT: " + outputR);
         out.write(outputR);
         out.newLine();
         out.flush();
