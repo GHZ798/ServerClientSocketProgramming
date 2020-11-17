@@ -1,12 +1,13 @@
 import java.io.*;
+import java.lang.Object;
 import java.net.*;
 import java.text.*;
-import java.util.*;
 import java.time.*;
-import java.lang.Object;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class PartialHTTP1Server {
+
   public static void main(String[] args) throws IOException {
     if (args.length != 1) {
       System.err.println("Usage: java EchoServer <port number>");
@@ -31,6 +32,7 @@ public class PartialHTTP1Server {
 }
 
 class ServerThread extends Thread {
+
   Socket socket;
 
   ServerThread(Socket socket) {
@@ -51,16 +53,15 @@ class ServerThread extends Thread {
       String status = "";
       List<String> response = new ArrayList<>();
       while ((inputLine = in.readLine()) != null) {
-
         System.out.println(inputLine);
         String[] newInput = inputLine.trim().split("\\s+");
         //for(int i = 0; i < newInput.length; i++){
         //  System.out.println(newInput[i]);
         //}
         // (inputLine = in.readLine())
-        // ----- 
-        // Get 
-        // ijawidjiawjd 
+        // -----
+        // Get
+        // ijawidjiawjd
         // aijwdijawd
         // -----
         // HTTP
@@ -106,7 +107,7 @@ class ServerThread extends Thread {
               } else if (newInput[0].equals("UNLINK")) {
                 status = response(7);
                 response.add(status);
-                // -> 404 
+                // -> 404
               } else {
                 status = response(2);
                 response.add(status);
@@ -128,24 +129,16 @@ class ServerThread extends Thread {
         }
         // the final output to the client.
         // 0 -> status
-        // 1 -> header everthing // get post head 
+        // 1 -> header everthing // get post head
         String outputR;
         try {
-          response.get(1); 
-          // -- if no index 1 exists skip 
-          outputR =
-            "HTTP/1.0 " +
-            response.get(0) +
-            "\n" +
-            response.get(1);
+          // -- if no index 1 exists skip
+          response.get(1);
+          outputR = "HTTP/1.0 " + response.get(0) + "\n" + response.get(1);
         } catch (IndexOutOfBoundsException e) {
-          outputR =
-            "HTTP/1.0 " +
-            response.get(0) + "\n";
+          outputR = "HTTP/1.0 " + response.get(0) + "\n";
         }
-        outputR =
-            "HTTP/1.0 " +
-            response.get(0) + "\n";
+        outputR = "HTTP/1.0 " + response.get(0) + "\n";
 
         System.out.println(outputR);
         out.write(outputR);
@@ -175,16 +168,16 @@ class ServerThread extends Thread {
       File file = new File("." + newInput);
       if (file.exists()) {
         if (file.canRead()) {
-          String filename = file.getName(); // index.html 
+          String filename = file.getName(); // index.html
           String filetype = "";
           if (filename.split("\\.").length < 2) {
             filetype = "application/octet-stream";
           } else {
             switch (filename.split("\\.")[1]) {
-            // index.html
-            // 0 -> index 
-            // 1 -> html
-            // "html"
+              // index.html
+              // 0 -> index
+              // 1 -> html
+              // "html"
               case "txt":
                 filetype = "text/plain";
                 break;
@@ -269,7 +262,7 @@ class ServerThread extends Thread {
 
           // 200 ok
           response.set(0, response(0));
-          // 0 -> "" -> 200 
+          // 0 -> "" -> 200
           // 1 -> header + para
         } else {
           // Forbidden 403
