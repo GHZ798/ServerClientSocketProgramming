@@ -54,4 +54,5 @@ public class PartialHTTP1Client {
 }
 // java -cp . PartialHTTP1Client.java localhost 8000
 // java -cp . PartialHTTP1Server.java 8000
+// java -jar HTTPServerTester.jar localhost 8000
 // HEAD text.txt HTTP/1.0

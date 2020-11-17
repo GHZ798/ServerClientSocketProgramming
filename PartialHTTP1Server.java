@@ -137,15 +137,19 @@ class ServerThread extends Thread {
             "HTTP/1.0 " +
             response.get(0) +
             System.getProperty("line.separator") +
-            response.get(1) +
-            null;
+            response.get(1);
         } catch (IndexOutOfBoundsException e) {
           outputR =
             "HTTP/1.0 " +
             response.get(0) +
-            System.getProperty("line.separator") +
-            null;
+            System.getProperty("line.separator");
         }
+        outputR =
+            "HTTP/1.0 " +
+            response.get(0) +
+            System.getProperty("line.separator");
+
+        System.out.println(outputR);
         out.write(outputR);
         out.newLine();
         out.flush();
