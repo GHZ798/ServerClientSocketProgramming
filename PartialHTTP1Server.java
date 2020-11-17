@@ -276,7 +276,7 @@ class ServerThread extends Thread {
           response.set(0, response(3));
         }
       } else {
-        // file dosent exist 404
+        // File Dosent Exist 404
         response.set(0, response(4));
       }
     } catch (FileNotFoundException e) {
