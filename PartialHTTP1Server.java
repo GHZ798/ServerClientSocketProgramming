@@ -54,9 +54,9 @@ class ServerThread extends Thread {
 
         System.out.println(inputLine);
         String[] newInput = inputLine.trim().split("\\s+");
-        for(int i = 0; i < newInput.length; i++){
-          System.out.println(newInput[i]);
-        }
+        //for(int i = 0; i < newInput.length; i++){
+        //  System.out.println(newInput[i]);
+        //}
         // (inputLine = in.readLine())
         // ----- 
         // Get 
@@ -136,18 +136,16 @@ class ServerThread extends Thread {
           outputR =
             "HTTP/1.0 " +
             response.get(0) +
-            System.getProperty("line.separator") +
+            "\n" +
             response.get(1);
         } catch (IndexOutOfBoundsException e) {
           outputR =
             "HTTP/1.0 " +
-            response.get(0) +
-            System.getProperty("line.separator");
+            response.get(0) + "\n";
         }
         outputR =
             "HTTP/1.0 " +
-            response.get(0) +
-            System.getProperty("line.separator");
+            response.get(0) + "\n";
 
         System.out.println(outputR);
         out.write(outputR);
