@@ -40,11 +40,14 @@ class ServerThread extends Thread {
   }
 
   public void run() {
+    final char CR = (char) 0x0D;
+    final char LF = (char) 0x0A;
+
+    final String CRLF = "" + CR + LF; // "" forces conversion to string
     try (
-      BufferedWriter out = new BufferedWriter(
+      BufferedWriter buffout = new BufferedWriter(
         new OutputStreamWriter(this.socket.getOutputStream())
       );
-      // PrintWriter out = new PrintWriter(this.socket.getOutputStream());
       BufferedReader in = new BufferedReader(
         new InputStreamReader(this.socket.getInputStream())
       );
@@ -52,6 +55,7 @@ class ServerThread extends Thread {
       String inputLine;
       String status = "";
       List<String> response = new ArrayList<>();
+
       while ((inputLine = in.readLine()) != null) {
         System.out.println(inputLine);
         String[] newInput = inputLine.trim().split("\\s+");
@@ -133,20 +137,20 @@ class ServerThread extends Thread {
         String outputR;
         try {
           // -- if no index 1 exists skip
-          System.out.println("Inside TRY");;
+          System.out.println("Inside TRY");
           response.get(1);
-          outputR = "HTTP/1.0 " + response.get(0) + System.getProperty("line.separator") + response.get(1);
+          outputR = "HTTP/1.0 " + response.get(0) + CRLF + response.get(1) + CRLF;
         } catch (IndexOutOfBoundsException e) {
-          System.out.println("Inside CATCH");;
-
-          outputR = "HTTP/1.0 " + response.get(0) + System.getProperty("line.separator");
+          System.out.println("Inside CATCH");
+          outputR = "HTTP/1.0 " + response.get(0) + CRLF;
         }
-        // outputR = "HTTP/1.0 " + response.get(0) + System.getProperty("line.separator");
 
         System.out.println("OUTPUT: " + outputR);
-        out.write(outputR);
-        out.newLine();
-        out.flush();
+
+        // Buff  VVV
+        buffout.write(outputR);
+        buffout.write(CRLF);
+        buffout.flush();
         response.clear(); // clear the storage
       }
       socket.close();

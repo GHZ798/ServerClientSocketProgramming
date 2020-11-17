@@ -1,49 +1,18 @@
-<Blank line>file=./doc_root/index.html&line=3
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 34
+ester.jar localhost 8080
+Test Case 1
 
 # Request:
-POST /cgi_bin/print.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 37
-<Blank line>file=./doc_root/index.html&line=100
-
-
-BOO@DESKTOP-7Q9B1UJ MINGW64 ~/Desktop/git/ServerClientSocketProgramming (main)
-$ java -jar HTTPServerTester.jar localhost 8080
-Test Case 1    
-
-# Request:     
 GET /index.html
-<Blank line>   
-
-# Feedback:    
- - Passed!
-
-==============================   
-
-Test Case 2
-
-# Request:
-KICK /index.html HTTP/1.0        
 <Blank line>
 
 # Feedback:
- - Passed!
+Test Case 2
 
-==============================   
+# Request:
+KICK /index.html HTTP/1.0
+<Blank line>
 
+# Feedback:
 Test Case 3
 
 # Request:
@@ -51,10 +20,6 @@ GET /i n d e x . h t m l HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Passed!
-
-==============================
-
 Test Case 4
 
 # Request:
@@ -62,10 +27,6 @@ get /index.html HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Passed!
-
-==============================
-
 Test Case 5
 
 # Request:
@@ -73,10 +34,6 @@ GET /index.html HTTP/1.1
 <Blank line>
 
 # Feedback:
- - Passed!
-
-==============================
-
 Test Case 6
 
 # Request:
@@ -84,10 +41,6 @@ PUT /index.html HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Passed!
-
-==============================
-
 Test Case 7
 
 # Request:
@@ -95,10 +48,6 @@ DELETE /index.html HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Passed!
-
-==============================
-
 Test Case 8
 
 # Request:
@@ -106,10 +55,6 @@ LINK /index.html HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Passed!
-
-==============================
-
 Test Case 9
 
 # Request:
@@ -117,10 +62,6 @@ UNLINK /index.html HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Passed!
-
-==============================
-
 Test Case 10
 
 # Request:
@@ -128,10 +69,6 @@ GET /doc_root/top_secret.txt HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Response header not found: "HTTP/1.0 403 Forbidden"
-
-==============================
-
 Test Case 11
 
 # Request:
@@ -139,10 +76,6 @@ GET /missing.zip HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Passed!
-
-==============================
-
 Test Case 12
 
 # Request:
@@ -150,17 +83,6 @@ GET /doc_root/index.html HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Response header not found: "HTTP/1.0 200 OK"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Wed, 15 Jul 2015 04:14:40 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
- - Payload is not correct
-
-==============================
-
 Test Case 13
 
 # Request:
@@ -168,16 +90,6 @@ HEAD /doc_root/index.html HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Response header not found: "HTTP/1.0 200 OK"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Wed, 15 Jul 2015 04:14:40 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 14
 
 # Request:
@@ -185,17 +97,6 @@ GET /doc_root/resources/google.png HTTP/1.0
 <Blank line>
 
 # Feedback:
- - Response header not found: "HTTP/1.0 200 OK"
- - Response header not found: "Content-Type: image/png"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Wed, 09 Oct 2013 01:35:39 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
- - Payload is not correct
-
-==============================
-
 Test Case 15
 
 # Request:
@@ -204,11 +105,6 @@ If-Modified-Since: Tue, 14 Jul 2015 18:00:00 GMT
 <Blank line>
 
 # Feedback:
- - Response header not found: "HTTP/1.0 304 Not Modified"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 16
 
 # Request:
@@ -262,10 +158,6 @@ Content-Length: 14
 
 
 # Feedback:
- - Response header not found: "HTTP/1.0 500 Internal Server Error"
-
-==============================
-
 Test Case 22
 
 # Request:
@@ -278,10 +170,6 @@ Content-Length: 14
 
 
 # Feedback:
- - Response header not found: "HTTP/1.0 405 Method Not Allowed"
-
-==============================
-
 Test Case 23
 
 # Request:
@@ -294,10 +182,6 @@ Content-Length: 4
 
 
 # Feedback:
- - Response header not found: "HTTP/1.0 403 Forbidden"
-
-==============================
-
 Test Case 24
 
 # Request:
@@ -310,13 +194,6 @@ Content-Length: 4
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 25
 
 # Request:
@@ -329,13 +206,6 @@ Content-Length: 7
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 26
 
 # Request:
@@ -347,13 +217,6 @@ Content-Length: 0
 <Blank line>
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 27
 
 # Request:
@@ -365,13 +228,6 @@ Content-Length: 0
 <Blank line>
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 28
 
 # Request:
@@ -384,13 +240,6 @@ Content-Length: 4
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 29
 
 # Request:
@@ -403,13 +252,6 @@ Content-Length: 23
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 30
 
 # Request:
@@ -422,13 +264,6 @@ Content-Length: 4
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 31
 
 # Request:
@@ -441,13 +276,6 @@ Content-Length: 14
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 32
 
 # Request:
@@ -460,13 +288,6 @@ Content-Length: 36
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 33
 
 # Request:
@@ -479,523 +300,6 @@ Content-Length: 35
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 34
-
-# Request:
-POST /cgi_bin/print.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 37
-<Blank line>file=./doc_root/index.html&line=100
-
-BOO@DESKTOP-7Q9B1UJ MINGW64 ~/Desktop/git/ServerClientSocketProgramming (main)
-$ java -jar HTTPServerTester.jar localhost 8080
-Test Case 1    
-
-# Request:     
-GET /index.html
-<Blank line>   
-
-# Feedback:    
- - Passed!
-
-==============================   
-
-Test Case 2
-
-# Request:
-KICK /index.html HTTP/1.0        
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================   
-
-Test Case 3
-
-# Request:
-GET /i n d e x . h t m l HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 4
-
-# Request:
-get /index.html HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 5
-
-# Request:
-GET /index.html HTTP/1.1
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 6
-
-# Request:
-PUT /index.html HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 7
-
-# Request:
-DELETE /index.html HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 8
-
-# Request:
-LINK /index.html HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 9
-
-# Request:
-UNLINK /index.html HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 10
-
-# Request:
-GET /doc_root/top_secret.txt HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Response header not found: "HTTP/1.0 403 Forbidden"
-
-==============================
-
-Test Case 11
-
-# Request:
-GET /missing.zip HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 12
-
-# Request:
-GET /doc_root/index.html HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Wed, 15 Jul 2015 04:14:40 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
- - Payload is not correct
-
-==============================
-
-Test Case 13
-
-# Request:
-HEAD /doc_root/index.html HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Wed, 15 Jul 2015 04:14:40 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 14
-
-# Request:
-GET /doc_root/resources/google.png HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Response header not found: "Content-Type: image/png"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Wed, 09 Oct 2013 01:35:39 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
- - Payload is not correct
-
-==============================
-
-Test Case 15
-
-# Request:
-GET /doc_root/resources/bitcoin.pdf HTTP/1.0
-If-Modified-Since: Tue, 14 Jul 2015 18:00:00 GMT
-<Blank line>
-
-# Feedback:
- - Response header not found: "HTTP/1.0 304 Not Modified"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 16
-
-# Request:
-GET /doc_root/resources/ls HTTP/1.0
-If-Modified-Since: Tue, 14 Jul 2015 18:00:00 GMT
-<Blank line>
-
-# Feedback:
- - Response header not found: "Content-Type: application/octet-stream"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Wed, 15 Jul 2015 04:53:48 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
- - Payload is not correct
-
-==============================
-
-Test Case 17
-
-# Request:
-GET /doc_root/resources/bitcoin.pdf HTTP/1.0
-If-Modified-Since: foobar 30000
-<Blank line>
-
-# Feedback:
- - Response header not found: "Content-Type: application/pdf"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Tue, 14 Jul 2015 14:13:49 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
- - Payload is not correct
-
-==============================
-
-Test Case 18
-
-# Request:
-HEAD /doc_root/resources/bitcoin.pdf HTTP/1.0
-If-Modified-Since: Tue, 14 Jul 2015 18:00:00 GMT
-<Blank line>
-
-# Feedback:
- - Response header not found: "Content-Type: application/pdf"
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Last-Modified: Tue, 14 Jul 2015 14:13:49 GMT"
- - Response header not found: "Content-Encoding: identity"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 19
-
-# Request:
-GET /env.cgi HTTP/1.0
-<Blank line>
-
-# Feedback:
- - Passed!
-
-==============================
-
-Test Case 20
-
-# Request:
-POST /cgi_bin/env.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-<Blank line>File=./doc_root/index.html&cost=0
-
-
-# Feedback:
- - Response header not found: "HTTP/1.0 411 Length Required"
-
-==============================
-
-Test Case 21
-
-# Request:
-POST /cgi_bin/env.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Length: 14
-<Blank line>File=./doc_root/index.html&cost=0
-
-
-# Feedback:
- - Response header not found: "HTTP/1.0 500 Internal Server Error"
-
-==============================
-
-Test Case 22
-
-# Request:
-POST /cgi_bin/env.cig HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 14
-<Blank line>File=./doc_root/index.html&cost=0
-
-
-# Feedback:
- - Response header not found: "HTTP/1.0 405 Method Not Allowed"
-
-==============================
-
-Test Case 23
-
-# Request:
-POST /cgi_bin/forbidden.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 4
-<Blank line>x=1
-
-
-# Feedback:
- - Response header not found: "HTTP/1.0 403 Forbidden"
-
-==============================
-
-Test Case 24
-
-# Request:
-POST /cgi_bin/upcase.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 4
-<Blank line>x=1
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 25
-
-# Request:
-POST /cgi_bin/upcase.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 7
-<Blank line>x=1&y=2
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 26
-
-# Request:
-POST /cgi_bin/basic.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 0
-<Blank line>
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 27
-
-# Request:
-POST /cgi_bin/env.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 0
-<Blank line>
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 28
-
-# Request:
-POST /cgi_bin/env.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 4
-<Blank line>x=1
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 29
-
-# Request:
-POST /cgi_bin/param.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 23
-<Blank line>greeting=hello&name=you
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 30
-
-# Request:
-POST /cgi_bin/param.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 4
-<Blank line>c=!
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 31
-
-# Request:
-POST /cgi_bin/param.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 14
-<Blank line>c=!&d=[a,b]
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 32
-
-# Request:
-POST /cgi_bin/param.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 36
-<Blank line>file=../doc_root/index.html&line=3
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
-Test Case 33
-
-# Request:
-POST /cgi_bin/print.cgi HTTP/1.0
-From: me@mycomputer
-User-Agent: telnet
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 35
-<Blank line>file=./doc_root/index.html&line=3
-
-
-# Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 34
 
 # Request:
@@ -1008,13 +312,6 @@ Content-Length: 37
 
 
 # Feedback:
- - Response header not found: "Content-Length: [length of payload]"
- - Response header not found: "Content-Type: text/html"
- - Response header not found: "Allow: GET, POST, HEAD"
- - Response header not found: "Expires: a future date"
-
-==============================
-
 Test Case 35
 
 # Request:
@@ -1026,10 +323,4 @@ Content-Length: 0
 <Blank line>
 
 # Feedback:
- - Response header not found: "HTTP/1.0 204 No Content"
 
-==============================
-
-
-BOO@DESKTOP-7Q9B1UJ MINGW64 ~/Desktop/git/ServerClientSocketProgramming (main)
-$
