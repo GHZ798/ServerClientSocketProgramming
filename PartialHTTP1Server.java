@@ -1,6 +1,7 @@
 import java.io.*;
 import java.lang.Object;
 import java.net.*;
+import java.security.cert.CRL;
 import java.text.*;
 import java.time.*;
 import java.util.*;
@@ -34,16 +35,15 @@ public class PartialHTTP1Server {
 class ServerThread extends Thread {
 
   Socket socket;
+  final char CR = (char) 0x0D;
+  final char LF = (char) 0x0A;
+  final String CRLF = "" + CR + LF; // "" forces conversion to string
 
   ServerThread(Socket socket) {
     this.socket = socket;
   }
 
   public void run() {
-    final char CR = (char) 0x0D;
-    final char LF = (char) 0x0A;
-
-    final String CRLF = "" + CR + LF; // "" forces conversion to string
     try (
       BufferedWriter buffout = new BufferedWriter(
         new OutputStreamWriter(this.socket.getOutputStream())
@@ -90,7 +90,7 @@ class ServerThread extends Thread {
               if (newInput[0].equals("GET")) {
                 // get method
                 // args newInput[1] and status
-                response = get(newInput[1], status);
+                response = get(newInput[1]);
               } else if (newInput[0].equals("POST")) {
                 // post method
                 // args newInput[1] and status
@@ -134,21 +134,26 @@ class ServerThread extends Thread {
         // the final output to the client.
         // 0 -> status
         // 1 -> header everthing // get post head
-        String outputR;
-        try {
-          // -- if no index 1 exists skip
-          System.out.println("Inside TRY");
-          response.get(1);
-          outputR = "HTTP/1.0 " + response.get(0) + CRLF + response.get(1) + CRLF;
-        } catch (IndexOutOfBoundsException e) {
-          System.out.println("Inside CATCH");
-          outputR = "HTTP/1.0 " + response.get(0) + CRLF;
-        }
+        // String outputR;
+        // try {
+        //   // -- if no index 1 exists skip
+        //   System.out.println("Inside TRY");
+        //   response.get(1);
+        //   outputR = "HTTP/1.0 " + response.get(0) + CRLF + response.get(1) + CRLF;
+        // } catch (IndexOutOfBoundsException e) {
+        //   System.out.println("Inside CATCH");
+        //   outputR = "HTTP/1.0 " + response.get(0) + CRLF;
+        // }
 
-        System.out.println("OUTPUT: " + outputR);
+        // System.out.println("OUTPUT: " + outputR);
 
         // Buff  VVV
-        buffout.write(outputR);
+        // buffout.write(outputR);
+        // buffout.write(CRLF);
+
+        for (String output : response) {
+          buffout.write(output);
+        }
         buffout.write(CRLF);
         buffout.flush();
         response.clear(); // clear the storage
@@ -165,119 +170,110 @@ class ServerThread extends Thread {
 
   // /index.html
   // status -> r
-  public List<String> get(String newInput, String r) {
-    List<String> response = new ArrayList<>();
-    response.add(r); // storage status -> 0
-    String para = "";
-    String header = "";
 
+  public String fileType(String filename) {
+    String filetype = "";
+    if (filename.split("\\.").length < 2) {
+      filetype = "application/octet-stream";
+    } else {
+      switch (filename.split("\\.")[1]) {
+        case "txt":
+          filetype = "text/plain";
+          break;
+        case "html":
+          filetype = "text/html";
+          break;
+        case "gif":
+          filetype = "image/gif";
+          break;
+        case "jpeg":
+          filetype = "image/jpeg";
+          break;
+        case "png":
+          filetype = "image/png";
+          break;
+        case "ocetet-stream":
+          filetype = "application/octet-stream";
+          break;
+        case "pdf":
+          filetype = "application/pdf";
+          break;
+        case "x-gzip":
+          filetype = "application/x-gzip";
+          break;
+        case "zip":
+          filetype = "application/zip";
+          break;
+        default:
+          filetype = "application/octet-stream";
+          break;
+      } // content-type is working
+    }
+    return filetype;
+  }
+
+  public List<String> get(String newInput) {
+    List<String> response = new ArrayList<>();
+    // String para = "";
+    // String header = "";
+    // String status = "";
     try {
       File file = new File("." + newInput);
       if (file.exists()) {
         if (file.canRead()) {
-          String filename = file.getName(); // index.html
-          String filetype = "";
-          if (filename.split("\\.").length < 2) {
-            filetype = "application/octet-stream";
-          } else {
-            switch (filename.split("\\.")[1]) {
-              // index.html
-              // 0 -> index
-              // 1 -> html
-              // "html"
-              case "txt":
-                filetype = "text/plain";
-                break;
-              case "html":
-                filetype = "text/html";
-                break;
-              case "gif":
-                filetype = "image/gif";
-                break;
-              case "jpeg":
-                filetype = "image/jpeg";
-                break;
-              case "png":
-                filetype = "image/png";
-                break;
-              case "ocetet-stream":
-                filetype = "application/octet-stream";
-                break;
-              case "pdf":
-                filetype = "application/pdf";
-                break;
-              case "x-gzip":
-                filetype = "application/x-gzip";
-                break;
-              case "zip":
-                filetype = "application/zip";
-                break;
-              default:
-                filetype = "application/octet-stream";
-                break;
-            } // content-type is working
-          }
-          header += "Content-Type: " + filetype + "\n";
+          response.add("HTTP/1.0 " + response(0) + CRLF);
+
+          String filetype = fileType(file.getName());
+          response.add("Content-Type: " + filetype + CRLF);
 
           long filelength = file.length(); // file length
-          header += "Content-Length: " + filelength + "\n";
+          response.add("Content-Length: " + filelength + CRLF);
 
           long timeStamp = file.lastModified();
           DateFormat formatter = new SimpleDateFormat(
             "E, dd MM yyyy hh:mm:ss zzz"
           );
-
           Calendar calendar = Calendar.getInstance();
           calendar.setTimeInMillis(timeStamp);
           String lastModified = formatter.format(calendar.getTime()); // last modified
-          header += "Last-Modified: " + lastModified + "\n";
+          response.add("Last-Modified: " + lastModified + CRLF);
 
-          long IfModSince = file.lastModified();
-          Calendar newCalendar = Calendar.getInstance();
-          newCalendar.setTimeInMillis(IfModSince);
-          String LastMod = formatter.format(newCalendar.getTime());
-
-          if (lastModified.equals(LastMod)) {
-            response.set(0, response(0));
-          } else {
-            response.set(0, response(1));
-          }
+          // long IfModSince = file.lastModified();
+          // Calendar newCalendar = Calendar.getInstance();
+          // newCalendar.setTimeInMillis(IfModSince);
+          // String LastMod = formatter.format(newCalendar.getTime());
+          // if (lastModified.equals(LastMod)) {
+          //   response.set(0, response(0));
+          // } else {
+          //   response.set(0, response(1));
+          // }
 
           String contentIncoding = "identity"; // content incoding
-          header += "Content-Encoding: " + contentIncoding + "\n";
+          response.add("Content-Encoding: " + contentIncoding + CRLF);
 
           String allow = "GET, POST, HEAD"; // allow
-          header += "Allow: " + allow + "\n";
+          response.add("Allow: " + allow + CRLF);
 
           Calendar now = Calendar.getInstance();
           now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
           // System.out.println(formatter.format(now.getTime()));
           String expire = formatter.format(now.getTime()); // expire
-          header += "Expire: " + expire + "\n";
+          response.add("Expire: " + expire +  CRLF);
+          response.add(CRLF);
 
           // writing the file
           Scanner myReader = new Scanner(file);
           while (myReader.hasNextLine()) {
-            String data = myReader.nextLine();
-            para += data + "\n";
+            response.add( myReader.nextLine() + CRLF);
           }
-          header += "\n" + para;
-          response.add(header);
-          // 0 -> status
-          // 1 -> header + para
           myReader.close();
-
-          // 200 ok
-          response.set(0, response(0));
-          // 0 -> "" -> 200
-          // 1 -> header + para
         } else {
           // Forbidden 403
-          response.set(0, response(3));
+          response.add("HTTP/1.0 " + response(3) + CRLF);
         }
       } else {
         // file dosent exist 404
-        response.set(0, response(4));
+        response.add("HTTP/1.0 " + response(4) + CRLF);
       }
     } catch (FileNotFoundException e) {
       System.out.println("An error occurred.");
@@ -296,44 +292,8 @@ class ServerThread extends Thread {
       File file = new File("." + newInput);
       if (file.exists()) {
         if (file.canRead()) {
-          String filename = file.getName();
-          String filetype = "";
-          if (filename.split("\\.").length < 2) {
-            filetype = "application/octet-stream";
-          } else {
-            switch (filename.split("\\.")[1]) {
-              case "txt":
-                filetype = "text/plain";
-                break;
-              case "html":
-                filetype = "text/html";
-                break;
-              case "gif":
-                filetype = "image/gif";
-                break;
-              case "jpeg":
-                filetype = "image/jpeg";
-                break;
-              case "png":
-                filetype = "image/png";
-                break;
-              case "ocetet-stream":
-                filetype = "application/octet-stream";
-                break;
-              case "pdf":
-                filetype = "application/pdf";
-                break;
-              case "x-gzip":
-                filetype = "application/x-gzip";
-                break;
-              case "zip":
-                filetype = "application/zip";
-                break;
-              default:
-                filetype = "application/octet-stream";
-                break;
-            } // content-type is working
-          }
+          String filetype = fileType(file.getName());
+
           header += "Content-Type: " + filetype + "\n";
           long filelength = file.length(); // file length
           header += "Content-Length: " + filelength + "\n";
