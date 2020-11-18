@@ -272,8 +272,13 @@ class ServerThread extends Thread {
           response.add("HTTP/1.0 " + response(3) + CRLF);
         }
       } else {
+<<<<<<< HEAD
         // file dosent exist 404
         response.add("HTTP/1.0 " + response(4) + CRLF);
+=======
+        // File Dosent Exist 404
+        response.set(0, response(4));
+>>>>>>> 887d6b2bb2e00a95f04d88ce70e63e14a3008594
       }
     } catch (FileNotFoundException e) {
       System.out.println("An error occurred.");
