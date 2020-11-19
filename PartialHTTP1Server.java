@@ -59,30 +59,14 @@ class ServerThread extends Thread {
       while ((inputLine = in.readLine()) != null) {
         System.out.println(inputLine);
         String[] newInput = inputLine.trim().split("\\s+");
-        //for(int i = 0; i < newInput.length; i++){
-        //  System.out.println(newInput[i]);
-        //}
-        // (inputLine = in.readLine())
-        // -----
-        // Get
-        // ijawidjiawjd
-        // aijwdijawd
-        // -----
-        // HTTP
-        // 1.0
+
         if (
           newInput.length != 3 || (!"HTTP".equals(newInput[2].split("/")[0]))
         ) {
-          status = response(2);
-          response.add(status); //storage
-          //reponse array
-          // |-> 400 Bad Request
+          response.add("HTTP/1.0 " + response(2) + CRLF);
         } else if (newInput[2].split("/")[0].equals("HTTP")) {
+          // btween - check
           if (
-            // HTTP/1.0
-            // newInput[2].split("/")
-            // HTTP
-            // 1.0
             0 <= Float.parseFloat(newInput[2].split("/")[1]) &&
             1.0 >= Float.parseFloat(newInput[2].split("/")[1])
           ) {
@@ -100,36 +84,24 @@ class ServerThread extends Thread {
                 // args newInput[1] and status
                 response = head(newInput[1], status);
               } else if (newInput[0].equals("PUT")) {
-                status = response(7);
-                response.add(status);
+                response.add("HTTP/1.0 " + response(7) + CRLF);
               } else if (newInput[0].equals("DELETE")) {
-                status = response(7);
-                response.add(status);
+                response.add("HTTP/1.0 " + response(7) + CRLF);
               } else if (newInput[0].equals("LINK")) {
-                status = response(7);
-                response.add(status);
+                response.add("HTTP/1.0 " + response(7) + CRLF);
               } else if (newInput[0].equals("UNLINK")) {
-                status = response(7);
-                response.add(status);
-                // -> 404
+                response.add("HTTP/1.0 " + response(7) + CRLF);
               } else {
-                status = response(2);
-                response.add(status);
+                response.add("HTTP/1.0 " + response(2) + CRLF);
               }
             } else {
-              // 400 Bad Request
-              status = response(2);
-              response.add(status);
+              response.add("HTTP/1.0 " + response(2) + CRLF);
             }
           } else {
-            // version not supported
-            status = response(9);
-            response.add(status);
+            response.add("HTTP/1.0 " + response(9) + CRLF);
           }
         } else {
-          // bad request
-          status = response(2);
-          response.add(status);
+          response.add("HTTP/1.0 " + response(2) + CRLF);
         }
         // the final output to the client.
         // 0 -> status
@@ -153,6 +125,7 @@ class ServerThread extends Thread {
 
         for (String output : response) {
           buffout.write(output);
+          System.out.println(output);
         }
         buffout.write(CRLF);
         buffout.flush();
@@ -214,9 +187,6 @@ class ServerThread extends Thread {
 
   public List<String> get(String newInput) {
     List<String> response = new ArrayList<>();
-    // String para = "";
-    // String header = "";
-    // String status = "";
     try {
       File file = new File("." + newInput);
       if (file.exists()) {
@@ -231,13 +201,19 @@ class ServerThread extends Thread {
 
           long timeStamp = file.lastModified();
           DateFormat formatter = new SimpleDateFormat(
-            "E, dd MM yyyy hh:mm:ss zzz"
+            "E, dd MMM yyyy hh:mm:ss zzz"
           );
           Calendar calendar = Calendar.getInstance();
           calendar.setTimeInMillis(timeStamp);
+
+          System.out.println(calendar.getTimeZone().getDisplayName());
+          calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
+          System.out.println(calendar.getTimeZone().getDisplayName());
+
           String lastModified = formatter.format(calendar.getTime()); // last modified
           response.add("Last-Modified: " + lastModified + CRLF);
-
+          
+          System.out.println("Last-Modified: " + lastModified + CRLF);
           // long IfModSince = file.lastModified();
           // Calendar newCalendar = Calendar.getInstance();
           // newCalendar.setTimeInMillis(IfModSince);
@@ -258,13 +234,13 @@ class ServerThread extends Thread {
           now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
           // System.out.println(formatter.format(now.getTime()));
           String expire = formatter.format(now.getTime()); // expire
-          response.add("Expire: " + expire +  CRLF);
+          response.add("Expire: " + expire + CRLF);
           response.add(CRLF);
 
           // writing the file
           Scanner myReader = new Scanner(file);
           while (myReader.hasNextLine()) {
-            response.add( myReader.nextLine() + CRLF);
+            response.add(myReader.nextLine() + CRLF);
           }
           myReader.close();
         } else {
@@ -272,13 +248,8 @@ class ServerThread extends Thread {
           response.add("HTTP/1.0 " + response(3) + CRLF);
         }
       } else {
-<<<<<<< HEAD
         // file dosent exist 404
         response.add("HTTP/1.0 " + response(4) + CRLF);
-=======
-        // File Dosent Exist 404
-        response.set(0, response(4));
->>>>>>> 887d6b2bb2e00a95f04d88ce70e63e14a3008594
       }
     } catch (FileNotFoundException e) {
       System.out.println("An error occurred.");
