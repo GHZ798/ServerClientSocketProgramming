@@ -222,19 +222,29 @@ class ServerThread extends Thread {
       "HTTP_FROM=" + inputLines.get(0).split(":", 2)[1].trim(),
       "HTTP_USER_AGENT=" + inputLines.get(1).split(":", 2)[1].trim(),
     };
-
+    
+    System.out.println(file.getName().split("\\.")[1]);
     if (!"cgi".equals(file.getName().split("\\.")[1])) {
+      System.out.println("INSIDE IF !!");
+
       response.add("HTTP/1.0 " + Status(11) + CRLF);
       Response(response);
       return;
-    } else if (!file.canExecute()) {
+    } 
+      else if (!file.canExecute()) {
+      System.out.println("INSIDE ELSE IF !!");
+      System.out.println(file.getName());
+
       response.add("HTTP/1.0 " + Status(3) + CRLF);
       Response(response);
       return;
-    } else {
+    } 
+    else {
+      System.out.println("INSIDE ELSE !!");
+
       response.add("HTTP/1.0 " + Status(0) + CRLF);
       response.add("Content-Length: " + CONTENT_LENGTH + CRLF);
-      response.add("Content-Type: " + CONTENT_TYPE + CRLF);
+      response.add("Content-Type: " + "text/html" + CRLF);
       String allow = "GET, POST, HEAD"; // allow
       response.add("Allow: " + allow + CRLF);
 
@@ -263,7 +273,7 @@ class ServerThread extends Thread {
         );
         BufferedReader br = new BufferedReader(
           new InputStreamReader(process.getInputStream())
-        )
+        );
       ) {
         bw.write(param, 0, param.length());
         bw.flush();

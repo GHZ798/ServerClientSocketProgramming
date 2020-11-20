@@ -2,9 +2,11 @@ import java.io.*;
 
 public class test {
     public static void main(String argv[]){
-        
-        String x = "hEY:THERE";
-        System.out.println(x.split(":")[0]); 
-        
+        File file = new File("/cgi_bin/basic.cgi");
+        if(file.canExecute()){
+            System.out.println("YES");
+        } else {
+            System.out.println("NO");
+        }
     }
 }
