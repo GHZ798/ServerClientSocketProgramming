@@ -7,6 +7,8 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+// import sun.nio.ch.IOStatus;
+
 public class PartialHTTP1Server {
 
   public static void main(String[] args) throws IOException {
@@ -49,12 +51,12 @@ class ServerThread extends Thread {
   ServerThread(Socket socket, int port) {
     this.socket = socket;
     this.PORT = port;
-    try {
-      socket.setSoTimeout(5);
-    } catch (SocketException e) {
-      System.err.println("Error setting timeout on socket: ");
-      e.printStackTrace();
-    }
+    // try {
+    //   socket.setSoTimeout(5);
+    // } catch (SocketException e) {
+    //   System.err.println("Error setting timeout on socket: ");
+    //   e.printStackTrace();
+    // }
   }
 
   public void run() {
@@ -69,12 +71,17 @@ class ServerThread extends Thread {
       List<String> inputLines = new ArrayList<>();
 
       IP = this.socket.getInetAddress().getHostAddress();
+
       while ((inputLine = in.readLine()) != null) {
+        System.out.println(inputLine);
+
         if (inputLine.isEmpty()) {
           break;
         }
         inputLines.add(inputLine);
       }
+      // System.out.println(in.readLine());
+      // System.out.println(in.readLine());
 
       String[] newInput = inputLines.get(0).trim().split("\\s+");
       try {
@@ -90,45 +97,52 @@ class ServerThread extends Thread {
           ) {
             switch (method) {
               case "GET":
-                get(location);
+                if (inputLines.size() > 1) {
+                  inputLines.remove(0);
+                  getWiInputs(location, inputLines);
+                } else {
+                  get(location);
+                }
                 break;
               case "HEAD":
                 head(location);
+
                 break;
               case "POST":
-                post(location, status);
+                inputLines.remove(0);
+                post(location, inputLines, in);
                 break;
               case "PUT":
-                response.add("HTTP/1.0 " + response(7) + CRLF);
+                response.add("HTTP/1.0 " + Status(7) + CRLF);
                 Response(response);
                 break;
               case "DELETE":
-                response.add("HTTP/1.0 " + response(7) + CRLF);
+                response.add("HTTP/1.0 " + Status(7) + CRLF);
                 Response(response);
                 break;
               case "LINK":
-                response.add("HTTP/1.0 " + response(7) + CRLF);
+                response.add("HTTP/1.0 " + Status(7) + CRLF);
                 Response(response);
                 break;
               case "UNLINK":
-                response.add("HTTP/1.0 " + response(7) + CRLF);
+                response.add("HTTP/1.0 " + Status(7) + CRLF);
                 Response(response);
                 break;
               default:
-                response.add("HTTP/1.0 " + response(2) + CRLF);
+                response.add("HTTP/1.0 " + Status(2) + CRLF);
                 Response(response);
                 break;
             }
           } else {
-            response.add("HTTP/1.0 " + response(9) + CRLF);
+            response.add("HTTP/1.0 " + Status(9) + CRLF);
             Response(response);
           }
         } else {
-          response.add("HTTP/1.0 " + response(2) + CRLF);
+          response.add("HTTP/1.0 " + Status(2) + CRLF);
           Response(response);
         }
       } catch (IndexOutOfBoundsException e) {
-        response.add("HTTP/1.0 " + response(2) + CRLF);
+        response.add("HTTP/1.0 " + Status(2) + CRLF);
         Response(response);
       }
 
@@ -142,8 +156,149 @@ class ServerThread extends Thread {
     }
   }
 
-  // /index.html
-  // status -> r
+  public void post(String location, List<String> inputLines, BufferedReader in)
+    throws IOException {
+    List<String> response = new ArrayList<>();
+    int CONTENT_LENGTH = 0;
+    String CONTENT_TYPE = "";
+
+    for (String x : inputLines) {
+      System.out.println(x);
+    }
+
+    try {
+      // Content-Type
+      String ct = inputLines.get(2);
+      String ctHeader = ct.split(":", 2)[0];
+      String ctValue = ct.split(":", 2)[1].trim();
+
+      if (ctHeader.equals("Content-Type")) {
+        CONTENT_TYPE = ctValue;
+      } else {
+        response.add("HTTP/1.0 " + Status(10) + CRLF);
+        Response(response);
+        System.out.println("in else CT");
+
+        return;
+      }
+    } catch (IndexOutOfBoundsException e) {
+      response.add("HTTP/1.0 " + Status(6) + CRLF);
+      Response(response);
+      System.out.println("in else CT");
+    }
+
+    try {
+      // Content-Length
+      String cl = inputLines.get(3);
+      String clHeader = cl.split(":", 2)[0];
+      String clValue = cl.split(":", 2)[1].trim();
+
+      if (clHeader.equals("Content-Length")) {
+        CONTENT_LENGTH = Integer.parseInt(clValue);
+      } else {
+        response.add("HTTP/1.0 " + Status(10) + CRLF);
+        Response(response);
+        System.out.println("in else CL");
+
+        return;
+      }
+    } catch (IndexOutOfBoundsException e) {
+      response.add("HTTP/1.0 " + Status(10) + CRLF);
+      Response(response);
+      System.out.println("in else CT");
+    }
+
+    File file = new File(WORKING_DIR, location);
+    char[] data = new char[CONTENT_LENGTH * 2];
+    in.read(data);
+    String param = new String(data).trim().replaceAll("!(.)", "$1");
+    String cmd = WORKING_DIR.getAbsolutePath() + File.separatorChar + location;
+
+    String[] envVars = new String[] {
+      "CONTENT_LENGTH=" + CONTENT_LENGTH,
+      "SCRIPT_NAME=" + file.getName(),
+      "SERVER_NAME=" + IP,
+      "SERVER_PORT=" + PORT,
+      "HTTP_FROM=" + inputLines.get(0).split(":", 2)[1].trim(),
+      "HTTP_USER_AGENT=" + inputLines.get(1).split(":", 2)[1].trim(),
+    };
+
+    if (!"cgi".equals(file.getName().split("\\.")[1])) {
+      response.add("HTTP/1.0 " + Status(11) + CRLF);
+      Response(response);
+      return;
+    } else if (!file.canExecute()) {
+      response.add("HTTP/1.0 " + Status(3) + CRLF);
+      Response(response);
+      return;
+    } else {
+      response.add("HTTP/1.0 " + Status(0) + CRLF);
+      response.add("Content-Length: " + CONTENT_LENGTH + CRLF);
+      response.add("Content-Type: " + CONTENT_TYPE + CRLF);
+      String allow = "GET, POST, HEAD"; // allow
+      response.add("Allow: " + allow + CRLF);
+
+      DateFormat formatter = new SimpleDateFormat(
+        "E, dd MMM yyyy hh:mm:ss zzz"
+      );
+      formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+      Calendar now = Calendar.getInstance();
+      now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
+      String expire = formatter.format(now.getTime()); // expire
+      response.add("Expires: " + expire + CRLF);
+
+      System.out.println("Emplty?: " + response.isEmpty());
+      for (String x : response) {
+        System.out.println(x);
+      }
+
+      StringBuilder sb = new StringBuilder();
+      Process process = Runtime.getRuntime().exec(cmd, envVars, WORKING_DIR);
+
+      System.out.println("PAYLOAD 1");
+
+      try (
+        BufferedWriter bw = new BufferedWriter(
+          new OutputStreamWriter(process.getOutputStream())
+        );
+        BufferedReader br = new BufferedReader(
+          new InputStreamReader(process.getInputStream())
+        )
+      ) {
+        bw.write(param, 0, param.length());
+        bw.flush();
+        bw.close();
+        process.waitFor();
+        String line;
+        while ((line = br.readLine()) != null) {
+          sb.append(line).append('\n');
+        }
+      } catch (InterruptedException e) {
+        response.clear();
+        response.add("HTTP/1.0 " + Status(6) + CRLF);
+        Response(response);
+        return;
+      }
+      String payload = sb.toString();
+      System.out.println("PAYLOAD 1");
+      System.out.println(payload);
+
+      if (payload.trim().isEmpty()) {
+        response.clear();
+        response.add("HTTP/1.0 " + Status(6) + CRLF);
+        Response(response);
+        return;
+      }
+      System.out.println("PAYLOAD");
+
+      byte[] responseBytes = payload.getBytes();
+      System.out.println("RESULT ");
+      for (String x : response) {
+        System.out.println(x);
+      }
+      Response(response, responseBytes);
+    }
+  }
 
   public void get(String location) {
     List<String> response = new ArrayList<>();
@@ -152,14 +307,16 @@ class ServerThread extends Thread {
 
       if (!file.exists()) {
         // file dosent exist 404
-        response.add("HTTP/1.0 " + response(4) + CRLF);
+        response.add("HTTP/1.0 " + Status(4) + CRLF);
         Response(response);
+        return;
       } else if (!file.canRead()) {
         // Forbidden 403
-        response.add("HTTP/1.0 " + response(3) + CRLF);
+        response.add("HTTP/1.0 " + Status(3) + CRLF);
         Response(response);
+        return;
       } else {
-        response.add("HTTP/1.0 " + response(0) + CRLF);
+        response.add("HTTP/1.0 " + Status(0) + CRLF);
 
         String filetype = fileType(file.getName());
         response.add("Content-Type: " + filetype + CRLF);
@@ -188,7 +345,6 @@ class ServerThread extends Thread {
 
         Calendar now = Calendar.getInstance();
         now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
-        // System.out.println(formatter.format(now.getTime()));
         String expire = formatter.format(now.getTime()); // expire
         response.add("Expires: " + expire + CRLF);
 
@@ -210,57 +366,137 @@ class ServerThread extends Thread {
     }
   }
 
-  public List<String> post(String newInput, String r) {
-    return null;
+  public void getWiInputs(String location, List<String> inputLines) {
+    List<String> response = new ArrayList<>();
+    try {
+      File file = new File(WORKING_DIR, location);
+
+      if (!file.exists()) {
+        // file dosent exist 404
+        response.add("HTTP/1.0 " + Status(4) + CRLF);
+        Response(response);
+      } else if (!file.canRead()) {
+        // Forbidden 403
+        response.add("HTTP/1.0 " + Status(3) + CRLF);
+        Response(response);
+      } else {
+        response.add("HTTP/1.0 " + Status(0) + CRLF);
+
+        String filetype = fileType(file.getName());
+        response.add("Content-Type: " + filetype + CRLF);
+
+        int filelength = (int) file.length(); // file length
+        response.add("Content-Length: " + filelength + CRLF);
+
+        long timeStamp = file.lastModified();
+        DateFormat formatter = new SimpleDateFormat(
+          "EEE, dd MMM yyyy HH:mm:ss z",
+          Locale.US
+        );
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timeStamp);
+
+        String lastModified = formatter.format(calendar.getTime()); // last modified
+        response.add("Last-Modified: " + lastModified + CRLF);
+
+        // System.out.println("Last-Modified: " + lastModified + CRLF);
+
+        String contentIncoding = "identity"; // content incoding
+        response.add("Content-Encoding: " + contentIncoding + CRLF);
+
+        String allow = "GET, POST, HEAD"; // allow
+        response.add("Allow: " + allow + CRLF);
+
+        Calendar now = Calendar.getInstance();
+        now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
+        String expire = formatter.format(now.getTime()); // expire
+        response.add("Expires: " + expire + CRLF);
+
+        // input HEADERS
+
+        Date lastmod = Date.from(Instant.ofEpochMilli(file.lastModified()));
+
+        for (String x : inputLines) {
+          String header = x.split(":", 2)[0];
+          String date = x.split(":", 2)[1];
+          try {
+            if (header.equals("If-Modified-Since")) {
+              Date ifmod = formatter.parse(date.trim());
+              if (lastmod.before(ifmod)) {
+                response.clear();
+                response.add("HTTP/1.0 " + Status(1) + CRLF);
+                response.add("Expires: " + expire + CRLF);
+
+                Response(response);
+                return;
+              }
+            }
+          } catch (ParseException ignore) {}
+        }
+
+        // writing the file
+        byte[] payload = new byte[filelength];
+        BufferedInputStream bis = new BufferedInputStream(
+          new FileInputStream(file)
+        );
+        if (filelength != bis.read(payload)) {
+          throw new IOException("Error reading requested file");
+        }
+        bis.close();
+
+        Response(response, payload);
+      }
+    } catch (Exception e) {
+      System.out.println("An error occurred.");
+      e.printStackTrace();
+    }
   }
 
   public void head(String location) {
     List<String> response = new ArrayList<>();
     try {
       File file = new File(WORKING_DIR, location);
-      if (file.exists()) {
-        if (file.canRead()) {
-          response.add("HTTP/1.0 " + response(0) + CRLF);
 
-          String filetype = fileType(file.getName());
-          response.add("Content-Type: " + filetype + CRLF);
-
-          int filelength = (int) file.length(); // file length
-          response.add("Content-Length: " + filelength + CRLF);
-
-          long timeStamp = file.lastModified();
-          DateFormat formatter = new SimpleDateFormat(
-            "E, dd MMM yyyy hh:mm:ss zzz"
-          );
-          formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-          Calendar calendar = Calendar.getInstance();
-          calendar.setTimeInMillis(timeStamp);
-
-          String lastModified = formatter.format(calendar.getTime()); // last modified
-          response.add("Last-Modified: " + lastModified + CRLF);
-
-          System.out.println("Last-Modified: " + lastModified + CRLF);
-
-          String contentIncoding = "identity"; // content incoding
-          response.add("Content-Encoding: " + contentIncoding + CRLF);
-
-          String allow = "GET, POST, HEAD"; // allow
-          response.add("Allow: " + allow + CRLF);
-
-          Calendar now = Calendar.getInstance();
-          now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
-          // System.out.println(formatter.format(now.getTime()));
-          String expire = formatter.format(now.getTime()); // expire
-          response.add("Expires: " + expire + CRLF);
-          Response(response);
-        } else {
-          // Forbidden 403
-          response.add("HTTP/1.0 " + response(3) + CRLF);
-          Response(response);
-        }
-      } else {
+      if (!file.exists()) {
         // file dosent exist 404
-        response.add("HTTP/1.0 " + response(4) + CRLF);
+        response.add("HTTP/1.0 " + Status(4) + CRLF);
+        Response(response);
+      } else if (!file.canRead()) {
+        // Forbidden 403
+        response.add("HTTP/1.0 " + Status(3) + CRLF);
+        Response(response);
+      } else {
+        response.add("HTTP/1.0 " + Status(0) + CRLF);
+
+        String filetype = fileType(file.getName());
+        response.add("Content-Type: " + filetype + CRLF);
+
+        int filelength = (int) file.length(); // file length
+        response.add("Content-Length: " + filelength + CRLF);
+
+        long timeStamp = file.lastModified();
+        DateFormat formatter = new SimpleDateFormat(
+          "E, dd MMM yyyy hh:mm:ss zzz"
+        );
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timeStamp);
+
+        String lastModified = formatter.format(calendar.getTime()); // last modified
+        response.add("Last-Modified: " + lastModified + CRLF);
+
+        String contentIncoding = "identity"; // content incoding
+        response.add("Content-Encoding: " + contentIncoding + CRLF);
+
+        String allow = "GET, POST, HEAD"; // allow
+        response.add("Allow: " + allow + CRLF);
+
+        Calendar now = Calendar.getInstance();
+        now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
+        String expire = formatter.format(now.getTime()); // expire
+        response.add("Expires: " + expire + CRLF);
+
         Response(response);
       }
     } catch (Exception e) {
@@ -269,12 +505,15 @@ class ServerThread extends Thread {
     }
   }
 
-  //HEAD
   public void Response(List<String> response) {
     try {
+      System.out.println("INSIDE REGUALR OUTPUT: ");
+
+      for (String x : response) {
+        System.out.println(x);
+      }
       PrintStream ps = new PrintStream(this.socket.getOutputStream());
       if (response.size() < 6) {
-        System.out.println(response.size());
         int curr = 0;
         while (!response.isEmpty()) {
           ps.printf("%s", response.get(curr));
@@ -301,6 +540,11 @@ class ServerThread extends Thread {
       for (String x : response) {
         ps.printf("%s", x);
       }
+      System.out.println("INSIDE PAYLOAD OUTPUT: ");
+
+      for (String x : response) {
+        System.out.println(x);
+      }
       ps.printf("%s", CRLF);
 
       // String payload = response.get(curr);
@@ -315,7 +559,7 @@ class ServerThread extends Thread {
     }
   }
 
-  public String response(int i) {
+  public String Status(int i) {
     String statusCode;
     switch (i) {
       case 0:
@@ -347,6 +591,15 @@ class ServerThread extends Thread {
         break;
       case 9:
         statusCode = "505 HTTP Version Not Supported";
+        break;
+      case 10:
+        statusCode = "411 Length Required";
+        break;
+      case 11:
+        statusCode = "405 Method Not Allowed";
+        break;
+      case 12:
+        statusCode = "204 No Content";
         break;
       default:
         statusCode = "ERR";
