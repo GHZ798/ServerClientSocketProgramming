@@ -60,49 +60,53 @@ class ServerThread extends Thread {
         System.out.println(inputLine);
         String[] newInput = inputLine.trim().split("\\s+");
 
-        if (
-          newInput.length != 3 || (!"HTTP".equals(newInput[2].split("/")[0]))
-        ) {
-          response.add("HTTP/1.0 " + response(2) + CRLF);
-        } else if (newInput[2].split("/")[0].equals("HTTP")) {
-          // btween - check
-          if (
-            0 <= Float.parseFloat(newInput[2].split("/")[1]) &&
-            1.0 >= Float.parseFloat(newInput[2].split("/")[1])
-          ) {
-            if (newInput[0].equals(newInput[0].toUpperCase())) {
-              if (newInput[0].equals("GET")) {
-                // get method
-                // args newInput[1] and status
-                response = get(newInput[1]);
-              } else if (newInput[0].equals("POST")) {
-                // post method
-                // args newInput[1] and status
-                response = post(newInput[1], status);
-              } else if (newInput[0].equals("HEAD")) {
-                // head method
-                // args newInput[1] and status
-                response = head(newInput[1], status);
-              } else if (newInput[0].equals("PUT")) {
-                response.add("HTTP/1.0 " + response(7) + CRLF);
-              } else if (newInput[0].equals("DELETE")) {
-                response.add("HTTP/1.0 " + response(7) + CRLF);
-              } else if (newInput[0].equals("LINK")) {
-                response.add("HTTP/1.0 " + response(7) + CRLF);
-              } else if (newInput[0].equals("UNLINK")) {
-                response.add("HTTP/1.0 " + response(7) + CRLF);
-              } else {
-                response.add("HTTP/1.0 " + response(2) + CRLF);
+        try {
+          String method = newInput[0];
+          String location = newInput[1];
+          String version = newInput[2];
+
+          if (version.split("/")[0].equals("HTTP")) {
+            // btween - check
+            if (
+              0 <= Float.parseFloat(version.split("/")[1]) &&
+              1.0 >= Float.parseFloat(version.split("/")[1])
+            ) {
+              switch (method) {
+                case "GET":
+                  response = get(location);
+                  break;
+                case "HEAD":
+                  response = head(location, status);
+                  break;
+                case "POST":
+                  response = post(location, status);
+                  break;
+                case "PUT":
+                  response.add("HTTP/1.0 " + response(7) + CRLF);
+                  break;
+                case "DELETE":
+                  response.add("HTTP/1.0 " + response(7) + CRLF);
+                  break;
+                case "LINK":
+                  response.add("HTTP/1.0 " + response(7) + CRLF);
+                  break;
+                case "UNLINK":
+                  response.add("HTTP/1.0 " + response(7) + CRLF);
+                  break;
+                default:
+                  response.add("HTTP/1.0 " + response(2) + CRLF);
+                  break;
               }
             } else {
-              response.add("HTTP/1.0 " + response(2) + CRLF);
+              response.add("HTTP/1.0 " + response(9) + CRLF);
             }
           } else {
-            response.add("HTTP/1.0 " + response(9) + CRLF);
+            response.add("HTTP/1.0 " + response(2) + CRLF);
           }
-        } else {
+        } catch (IndexOutOfBoundsException e) {
           response.add("HTTP/1.0 " + response(2) + CRLF);
         }
+
         // the final output to the client.
         // 0 -> status
         // 1 -> header everthing // get post head
@@ -203,16 +207,13 @@ class ServerThread extends Thread {
           DateFormat formatter = new SimpleDateFormat(
             "E, dd MMM yyyy hh:mm:ss zzz"
           );
+          formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
           Calendar calendar = Calendar.getInstance();
           calendar.setTimeInMillis(timeStamp);
 
-          System.out.println(calendar.getTimeZone().getDisplayName());
-          calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
-          System.out.println(calendar.getTimeZone().getDisplayName());
-
           String lastModified = formatter.format(calendar.getTime()); // last modified
           response.add("Last-Modified: " + lastModified + CRLF);
-          
+
           System.out.println("Last-Modified: " + lastModified + CRLF);
           // long IfModSince = file.lastModified();
           // Calendar newCalendar = Calendar.getInstance();
@@ -234,7 +235,7 @@ class ServerThread extends Thread {
           now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
           // System.out.println(formatter.format(now.getTime()));
           String expire = formatter.format(now.getTime()); // expire
-          response.add("Expire: " + expire + CRLF);
+          response.add("Expires: " + expire + CRLF);
           response.add(CRLF);
 
           // writing the file
