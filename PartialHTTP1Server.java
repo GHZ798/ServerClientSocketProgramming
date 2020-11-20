@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class PartialHTTP1Server {
+
   public static void main(String[] args) throws IOException {
     if (args.length != 1) {
       System.err.println("Usage: java EchoServer <port number>");
@@ -48,6 +49,12 @@ class ServerThread extends Thread {
   ServerThread(Socket socket, int port) {
     this.socket = socket;
     this.PORT = port;
+    try {
+      socket.setSoTimeout(5);
+    } catch (SocketException e) {
+      System.err.println("Error setting timeout on socket: ");
+      e.printStackTrace();
+    }
   }
 
   public void run() {
@@ -59,109 +66,72 @@ class ServerThread extends Thread {
       String inputLine;
       String status = "";
       List<String> response = new ArrayList<>();
+      List<String> inputLines = new ArrayList<>();
+
       IP = this.socket.getInetAddress().getHostAddress();
       while ((inputLine = in.readLine()) != null) {
-        System.out.println(inputLine);
-        String[] newInput = inputLine.trim().split("\\s+");
-        try {
-          String method = newInput[0];
-          String location = newInput[1];
-          String version = newInput[2];
+        if (inputLine.isEmpty()) {
+          break;
+        }
+        inputLines.add(inputLine);
+      }
 
-          if (version.split("/")[0].equals("HTTP")) {
-            // btween - check
-            if (
-              0 <= Float.parseFloat(version.split("/")[1]) &&
-              1.0 >= Float.parseFloat(version.split("/")[1])
-            ) {
-              switch (method) {
-                case "GET":
-                  get(location);
-                  break;
-                case "HEAD":
-                  head(location);
-                  break;
-                case "POST":
-                  post(location, status);
-                  break;
-                case "PUT":
-                  response.add("HTTP/1.0 " + response(7) + CRLF);
-                  Response(response);
-                  break;
-                case "DELETE":
-                  response.add("HTTP/1.0 " + response(7) + CRLF);
-                  Response(response);
-                  break;
-                case "LINK":
-                  response.add("HTTP/1.0 " + response(7) + CRLF);
-                  Response(response);
-                  break;
-                case "UNLINK":
-                  response.add("HTTP/1.0 " + response(7) + CRLF);
-                  Response(response);
-                  break;
-                default:
-                  response.add("HTTP/1.0 " + response(2) + CRLF);
-                  Response(response);
-                  break;
-              }
-            } else {
-              response.add("HTTP/1.0 " + response(9) + CRLF);
-              Response(response);
+      String[] newInput = inputLines.get(0).trim().split("\\s+");
+      try {
+        String method = newInput[0];
+        String location = newInput[1];
+        String version = newInput[2];
+
+        if (version.split("/")[0].equals("HTTP")) {
+          // btween - check
+          if (
+            0 <= Float.parseFloat(version.split("/")[1]) &&
+            1.0 >= Float.parseFloat(version.split("/")[1])
+          ) {
+            switch (method) {
+              case "GET":
+                get(location);
+                break;
+              case "HEAD":
+                head(location);
+                break;
+              case "POST":
+                post(location, status);
+                break;
+              case "PUT":
+                response.add("HTTP/1.0 " + response(7) + CRLF);
+                Response(response);
+                break;
+              case "DELETE":
+                response.add("HTTP/1.0 " + response(7) + CRLF);
+                Response(response);
+                break;
+              case "LINK":
+                response.add("HTTP/1.0 " + response(7) + CRLF);
+                Response(response);
+                break;
+              case "UNLINK":
+                response.add("HTTP/1.0 " + response(7) + CRLF);
+                Response(response);
+                break;
+              default:
+                response.add("HTTP/1.0 " + response(2) + CRLF);
+                Response(response);
+                break;
             }
           } else {
-            response.add("HTTP/1.0 " + response(2) + CRLF);
+            response.add("HTTP/1.0 " + response(9) + CRLF);
             Response(response);
           }
-        } catch (IndexOutOfBoundsException e) {
+        } else {
           response.add("HTTP/1.0 " + response(2) + CRLF);
           Response(response);
         }
-        // the final output to the client.
-        // 0 -> status
-        // 1 -> header everthing // get post head
-        // String outputR;
-        // try {
-        //   // -- if no index 1 exists skip
-        //   System.out.println("Inside TRY");
-        //   response.get(1);
-        //   outputR = "HTTP/1.0 " + response.get(0) + CRLF + response.get(1) + CRLF;
-        // } catch (IndexOutOfBoundsException e) {
-        //   System.out.println("Inside CATCH");
-        //   outputR = "HTTP/1.0 " + response.get(0) + CRLF;
-        // }
-
-        // System.out.println("OUTPUT: " + outputR);
-
-        // Buff  VVV
-        // buffout.write(outputR);
-        // buffout.write(CRLF);
-
-        // in RESPONSE
-
-        // if (response.size() < 6) {
-        //   System.out.println(response.size());
-        //   int curr = 0;
-        //   while (!response.isEmpty()) {
-        //     ps.printf("%s", response.get(curr));
-        //     curr++;
-        //   }
-        // } else {
-        //   int curr = 0;
-        //   while (curr < 7) {
-        //     ps.printf("%s", response.get(curr));
-        //     curr++;
-        //   }
-        //   ps.printf("%s", CRLF);
-
-        //   // String payload = response.get(curr);
-        //   // byte[] content = response.get(curr);
-        //   ps.write(content);
-        // }
-        // ps.printf("%s", CRLF);
-        // ps.flush();
-        // response.clear(); // clear the storage
+      } catch (IndexOutOfBoundsException e) {
+        response.add("HTTP/1.0 " + response(2) + CRLF);
+        Response(response);
       }
+
       socket.close();
     } catch (IOException e) {
       System.out.println(
@@ -179,53 +149,60 @@ class ServerThread extends Thread {
     List<String> response = new ArrayList<>();
     try {
       File file = new File(WORKING_DIR, location);
-      if (file.exists()) {
-        if (file.canRead()) {
-          response.add("HTTP/1.0 " + response(0) + CRLF);
 
-          String filetype = fileType(file.getName());
-          response.add("Content-Type: " + filetype + CRLF);
-
-          int filelength = (int) file.length(); // file length
-          response.add("Content-Length: " + filelength + CRLF);
-
-          long timeStamp = file.lastModified();
-          DateFormat formatter = new SimpleDateFormat(
-            "E, dd MMM yyyy hh:mm:ss zzz"
-          );
-          formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-          Calendar calendar = Calendar.getInstance();
-          calendar.setTimeInMillis(timeStamp);
-
-          String lastModified = formatter.format(calendar.getTime()); // last modified
-          response.add("Last-Modified: " + lastModified + CRLF);
-
-          System.out.println("Last-Modified: " + lastModified + CRLF);
-
-          String contentIncoding = "identity"; // content incoding
-          response.add("Content-Encoding: " + contentIncoding + CRLF);
-
-          String allow = "GET, POST, HEAD"; // allow
-          response.add("Allow: " + allow + CRLF);
-
-          Calendar now = Calendar.getInstance();
-          now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
-          // System.out.println(formatter.format(now.getTime()));
-          String expire = formatter.format(now.getTime()); // expire
-          response.add("Expires: " + expire + CRLF);
-
-          // writing the file
-          byte[] payload = new byte[filelength];
-          Response(response, payload);
-        } else {
-          // Forbidden 403
-          response.add("HTTP/1.0 " + response(3) + CRLF);
-          Response(response);
-        }
-      } else {
+      if (!file.exists()) {
         // file dosent exist 404
         response.add("HTTP/1.0 " + response(4) + CRLF);
         Response(response);
+      } else if (!file.canRead()) {
+        // Forbidden 403
+        response.add("HTTP/1.0 " + response(3) + CRLF);
+        Response(response);
+      } else {
+        response.add("HTTP/1.0 " + response(0) + CRLF);
+
+        String filetype = fileType(file.getName());
+        response.add("Content-Type: " + filetype + CRLF);
+
+        int filelength = (int) file.length(); // file length
+        response.add("Content-Length: " + filelength + CRLF);
+
+        long timeStamp = file.lastModified();
+        DateFormat formatter = new SimpleDateFormat(
+          "E, dd MMM yyyy hh:mm:ss zzz"
+        );
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timeStamp);
+
+        String lastModified = formatter.format(calendar.getTime()); // last modified
+        response.add("Last-Modified: " + lastModified + CRLF);
+
+        System.out.println("Last-Modified: " + lastModified + CRLF);
+
+        String contentIncoding = "identity"; // content incoding
+        response.add("Content-Encoding: " + contentIncoding + CRLF);
+
+        String allow = "GET, POST, HEAD"; // allow
+        response.add("Allow: " + allow + CRLF);
+
+        Calendar now = Calendar.getInstance();
+        now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
+        // System.out.println(formatter.format(now.getTime()));
+        String expire = formatter.format(now.getTime()); // expire
+        response.add("Expires: " + expire + CRLF);
+
+        // writing the file
+        byte[] payload = new byte[filelength];
+        BufferedInputStream bis = new BufferedInputStream(
+          new FileInputStream(file)
+        );
+        if (filelength != bis.read(payload)) {
+          throw new IOException("Error reading requested file");
+        }
+        bis.close();
+
+        Response(response, payload);
       }
     } catch (Exception e) {
       System.out.println("An error occurred.");
@@ -292,6 +269,7 @@ class ServerThread extends Thread {
     }
   }
 
+  //HEAD
   public void Response(List<String> response) {
     try {
       PrintStream ps = new PrintStream(this.socket.getOutputStream());
@@ -316,10 +294,11 @@ class ServerThread extends Thread {
     }
   }
 
+  //GET
   public void Response(List<String> response, byte[] payload) {
     try {
       PrintStream ps = new PrintStream(this.socket.getOutputStream());
-      for(String x: response){
+      for (String x : response) {
         ps.printf("%s", x);
       }
       ps.printf("%s", CRLF);
@@ -425,13 +404,52 @@ class ServerThread extends Thread {
 // String payload = sb.toString();
 // response.add(payload);
 // myReader.close();
-
- // long IfModSince = file.lastModified();
-          // Calendar newCalendar = Calendar.getInstance();
-          // newCalendar.setTimeInMillis(IfModSince);
-          // String LastMod = formatter.format(newCalendar.getTime());
-          // if (lastModified.equals(LastMod)) {
-          //   response.set(0, response(0));
-          // } else {
-          //   response.set(0, response(1));
-          // }
+// long IfModSince = file.lastModified();
+// Calendar newCalendar = Calendar.getInstance();
+// newCalendar.setTimeInMillis(IfModSince);
+// String LastMod = formatter.format(newCalendar.getTime());
+// if (lastModified.equals(LastMod)) {
+//   response.set(0, response(0));
+// } else {
+//   response.set(0, response(1));
+// }
+// -----------------------------------------------------------
+// the final output to the client.
+// 0 -> status
+// 1 -> header everthing // get post head
+// String outputR;
+// try {
+//   // -- if no index 1 exists skip
+//   System.out.println("Inside TRY");
+//   response.get(1);
+//   outputR = "HTTP/1.0 " + response.get(0) + CRLF + response.get(1) + CRLF;
+// } catch (IndexOutOfBoundsException e) {
+//   System.out.println("Inside CATCH");
+//   outputR = "HTTP/1.0 " + response.get(0) + CRLF;
+// }
+// System.out.println("OUTPUT: " + outputR);
+// Buff  VVV
+// buffout.write(outputR);
+// buffout.write(CRLF);
+// in RESPONSE
+// if (response.size() < 6) {
+//   System.out.println(response.size());
+//   int curr = 0;
+//   while (!response.isEmpty()) {
+//     ps.printf("%s", response.get(curr));
+//     curr++;
+//   }
+// } else {
+//   int curr = 0;
+//   while (curr < 7) {
+//     ps.printf("%s", response.get(curr));
+//     curr++;
+//   }
+//   ps.printf("%s", CRLF);
+//   // String payload = response.get(curr);
+//   // byte[] content = response.get(curr);
+//   ps.write(content);
+// }
+// ps.printf("%s", CRLF);
+// ps.flush();
+// response.clear(); // clear the storage
