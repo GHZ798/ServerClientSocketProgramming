@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class PartialHTTP1Server {
-
   public static void main(String[] args) throws IOException {
     if (args.length != 1) {
       System.err.println("Usage: java EchoServer <port number>");
@@ -21,7 +20,9 @@ public class PartialHTTP1Server {
     while (true) {
       if (futures.size() < 50) {
         Socket clientSocket = serverSocket.accept();
-        Future<?> f = pool.submit(new ServerThread(clientSocket));
+        Future<?> f = pool.submit(
+          new ServerThread(clientSocket, Integer.parseInt(args[0]))
+        );
         futures.add(f);
       } else {
         Socket clientSocket = serverSocket.accept();
@@ -38,16 +39,19 @@ class ServerThread extends Thread {
   final char CR = (char) 0x0D;
   final char LF = (char) 0x0A;
   final String CRLF = "" + CR + LF; // "" forces conversion to string
+  private static final File WORKING_DIR = new File(
+    System.getProperty("user.dir")
+  );
+  public String IP;
+  public int PORT;
 
-  ServerThread(Socket socket) {
+  ServerThread(Socket socket, int port) {
     this.socket = socket;
+    this.PORT = port;
   }
 
   public void run() {
     try (
-      BufferedWriter buffout = new BufferedWriter(
-        new OutputStreamWriter(this.socket.getOutputStream())
-      );
       BufferedReader in = new BufferedReader(
         new InputStreamReader(this.socket.getInputStream())
       );
@@ -55,11 +59,10 @@ class ServerThread extends Thread {
       String inputLine;
       String status = "";
       List<String> response = new ArrayList<>();
-
+      IP = this.socket.getInetAddress().getHostAddress();
       while ((inputLine = in.readLine()) != null) {
         System.out.println(inputLine);
         String[] newInput = inputLine.trim().split("\\s+");
-
         try {
           String method = newInput[0];
           String location = newInput[1];
@@ -73,40 +76,47 @@ class ServerThread extends Thread {
             ) {
               switch (method) {
                 case "GET":
-                  response = get(location);
+                  get(location);
                   break;
                 case "HEAD":
-                  response = head(location, status);
+                  head(location);
                   break;
                 case "POST":
-                  response = post(location, status);
+                  post(location, status);
                   break;
                 case "PUT":
                   response.add("HTTP/1.0 " + response(7) + CRLF);
+                  Response(response);
                   break;
                 case "DELETE":
                   response.add("HTTP/1.0 " + response(7) + CRLF);
+                  Response(response);
                   break;
                 case "LINK":
                   response.add("HTTP/1.0 " + response(7) + CRLF);
+                  Response(response);
                   break;
                 case "UNLINK":
                   response.add("HTTP/1.0 " + response(7) + CRLF);
+                  Response(response);
                   break;
                 default:
                   response.add("HTTP/1.0 " + response(2) + CRLF);
+                  Response(response);
                   break;
               }
             } else {
               response.add("HTTP/1.0 " + response(9) + CRLF);
+              Response(response);
             }
           } else {
             response.add("HTTP/1.0 " + response(2) + CRLF);
+            Response(response);
           }
         } catch (IndexOutOfBoundsException e) {
           response.add("HTTP/1.0 " + response(2) + CRLF);
+          Response(response);
         }
-
         // the final output to the client.
         // 0 -> status
         // 1 -> header everthing // get post head
@@ -127,13 +137,30 @@ class ServerThread extends Thread {
         // buffout.write(outputR);
         // buffout.write(CRLF);
 
-        for (String output : response) {
-          buffout.write(output);
-          System.out.println(output);
-        }
-        buffout.write(CRLF);
-        buffout.flush();
-        response.clear(); // clear the storage
+        // in RESPONSE
+
+        // if (response.size() < 6) {
+        //   System.out.println(response.size());
+        //   int curr = 0;
+        //   while (!response.isEmpty()) {
+        //     ps.printf("%s", response.get(curr));
+        //     curr++;
+        //   }
+        // } else {
+        //   int curr = 0;
+        //   while (curr < 7) {
+        //     ps.printf("%s", response.get(curr));
+        //     curr++;
+        //   }
+        //   ps.printf("%s", CRLF);
+
+        //   // String payload = response.get(curr);
+        //   // byte[] content = response.get(curr);
+        //   ps.write(content);
+        // }
+        // ps.printf("%s", CRLF);
+        // ps.flush();
+        // response.clear(); // clear the storage
       }
       socket.close();
     } catch (IOException e) {
@@ -148,51 +175,10 @@ class ServerThread extends Thread {
   // /index.html
   // status -> r
 
-  public String fileType(String filename) {
-    String filetype = "";
-    if (filename.split("\\.").length < 2) {
-      filetype = "application/octet-stream";
-    } else {
-      switch (filename.split("\\.")[1]) {
-        case "txt":
-          filetype = "text/plain";
-          break;
-        case "html":
-          filetype = "text/html";
-          break;
-        case "gif":
-          filetype = "image/gif";
-          break;
-        case "jpeg":
-          filetype = "image/jpeg";
-          break;
-        case "png":
-          filetype = "image/png";
-          break;
-        case "ocetet-stream":
-          filetype = "application/octet-stream";
-          break;
-        case "pdf":
-          filetype = "application/pdf";
-          break;
-        case "x-gzip":
-          filetype = "application/x-gzip";
-          break;
-        case "zip":
-          filetype = "application/zip";
-          break;
-        default:
-          filetype = "application/octet-stream";
-          break;
-      } // content-type is working
-    }
-    return filetype;
-  }
-
-  public List<String> get(String newInput) {
+  public void get(String location) {
     List<String> response = new ArrayList<>();
     try {
-      File file = new File("." + newInput);
+      File file = new File(WORKING_DIR, location);
       if (file.exists()) {
         if (file.canRead()) {
           response.add("HTTP/1.0 " + response(0) + CRLF);
@@ -200,7 +186,7 @@ class ServerThread extends Thread {
           String filetype = fileType(file.getName());
           response.add("Content-Type: " + filetype + CRLF);
 
-          long filelength = file.length(); // file length
+          int filelength = (int) file.length(); // file length
           response.add("Content-Length: " + filelength + CRLF);
 
           long timeStamp = file.lastModified();
@@ -215,15 +201,6 @@ class ServerThread extends Thread {
           response.add("Last-Modified: " + lastModified + CRLF);
 
           System.out.println("Last-Modified: " + lastModified + CRLF);
-          // long IfModSince = file.lastModified();
-          // Calendar newCalendar = Calendar.getInstance();
-          // newCalendar.setTimeInMillis(IfModSince);
-          // String LastMod = formatter.format(newCalendar.getTime());
-          // if (lastModified.equals(LastMod)) {
-          //   response.set(0, response(0));
-          // } else {
-          //   response.set(0, response(1));
-          // }
 
           String contentIncoding = "identity"; // content incoding
           response.add("Content-Encoding: " + contentIncoding + CRLF);
@@ -236,213 +213,127 @@ class ServerThread extends Thread {
           // System.out.println(formatter.format(now.getTime()));
           String expire = formatter.format(now.getTime()); // expire
           response.add("Expires: " + expire + CRLF);
-          response.add(CRLF);
 
           // writing the file
-          Scanner myReader = new Scanner(file);
-          while (myReader.hasNextLine()) {
-            response.add(myReader.nextLine() + CRLF);
-          }
-          myReader.close();
+          byte[] payload = new byte[filelength];
+          Response(response, payload);
         } else {
           // Forbidden 403
           response.add("HTTP/1.0 " + response(3) + CRLF);
+          Response(response);
         }
       } else {
         // file dosent exist 404
         response.add("HTTP/1.0 " + response(4) + CRLF);
+        Response(response);
       }
-    } catch (FileNotFoundException e) {
+    } catch (Exception e) {
       System.out.println("An error occurred.");
       e.printStackTrace();
     }
-    return response;
   }
 
   public List<String> post(String newInput, String r) {
-    List<String> response = new ArrayList<>();
-    response.add(r);
-    String para = "";
-    String header = "";
-
-    try {
-      File file = new File("." + newInput);
-      if (file.exists()) {
-        if (file.canRead()) {
-          String filetype = fileType(file.getName());
-
-          header += "Content-Type: " + filetype + "\n";
-          long filelength = file.length(); // file length
-          header += "Content-Length: " + filelength + "\n";
-
-          long timeStamp = file.lastModified();
-          DateFormat formatter = new SimpleDateFormat(
-            "E, dd MM yyyy hh:mm:ss zzz"
-          );
-
-          Calendar calendar = Calendar.getInstance();
-          calendar.setTimeInMillis(timeStamp);
-          String lastModified = formatter.format(calendar.getTime()); // last modified
-          header += "Last-Modified: " + lastModified + "\n";
-
-          long IfModSince = file.lastModified();
-          Calendar newCalendar = Calendar.getInstance();
-          newCalendar.setTimeInMillis(IfModSince);
-          String LastMod = formatter.format(newCalendar.getTime());
-
-          if (lastModified.equals(LastMod)) {
-            response.set(0, response(0));
-          } else {
-            response.set(0, response(1));
-          }
-          String contentIncoding = "identity"; // content incoding
-          header += "Content-Encoding: " + contentIncoding + "\n";
-
-          String allow = "GET, POST, HEAD"; // allow
-          header += "Allow: " + allow + "\n";
-
-          Calendar now = Calendar.getInstance();
-          now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
-          // System.out.println(formatter.format(now.getTime()));
-          String expire = formatter.format(now.getTime()); // expire
-          header += "Expire: " + expire + "\n";
-
-          // writing the file
-          Scanner myReader = new Scanner(file);
-          while (myReader.hasNextLine()) {
-            String data = myReader.nextLine();
-            para += data + "\n";
-          }
-          header += "\n" + para;
-          response.add(header);
-          myReader.close();
-
-          // 200 ok
-          response.set(0, response(0));
-        } else {
-          // Forbidden 403
-          response.set(0, response(3));
-        }
-      } else {
-        // file dosent exist 404
-        response.set(0, response(4));
-      }
-    } catch (FileNotFoundException e) {
-      System.out.println("An error occurred.");
-      e.printStackTrace();
-    }
-    return response;
+    return null;
   }
 
-  public List<String> head(String newInput, String r) {
+  public void head(String location) {
     List<String> response = new ArrayList<>();
-    response.add(r);
-    String para = "";
-    String header = "";
-
     try {
-      File file = new File("." + newInput);
+      File file = new File(WORKING_DIR, location);
       if (file.exists()) {
         if (file.canRead()) {
-          String filename = file.getName();
-          String filetype = "";
-          if (filename.split("\\.").length < 2) {
-            filetype = "application/octet-stream";
-          } else {
-            switch (filename.split("\\.")[1]) {
-              case "txt":
-                filetype = "text/plain";
-                break;
-              case "html":
-                filetype = "text/html";
-                break;
-              case "gif":
-                filetype = "image/gif";
-                break;
-              case "jpeg":
-                filetype = "image/jpeg";
-                break;
-              case "png":
-                filetype = "image/png";
-                break;
-              case "ocetet-stream":
-                filetype = "application/octet-stream";
-                break;
-              case "pdf":
-                filetype = "application/pdf";
-                break;
-              case "x-gzip":
-                filetype = "application/x-gzip";
-                break;
-              case "zip":
-                filetype = "application/zip";
-                break;
-              default:
-                filetype = "application/octet-stream";
-                break;
-            } // content-type is working
-          }
-          header += "Content-Type: " + filetype + "\n";
-          long filelength = file.length(); // file length
-          header += "Content-Length: " + filelength + "\n";
+          response.add("HTTP/1.0 " + response(0) + CRLF);
+
+          String filetype = fileType(file.getName());
+          response.add("Content-Type: " + filetype + CRLF);
+
+          int filelength = (int) file.length(); // file length
+          response.add("Content-Length: " + filelength + CRLF);
 
           long timeStamp = file.lastModified();
           DateFormat formatter = new SimpleDateFormat(
-            "E, dd MM yyyy hh:mm:ss zzz"
+            "E, dd MMM yyyy hh:mm:ss zzz"
           );
-
+          formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
           Calendar calendar = Calendar.getInstance();
           calendar.setTimeInMillis(timeStamp);
+
           String lastModified = formatter.format(calendar.getTime()); // last modified
-          header += "Last-Modified: " + lastModified + "\n";
+          response.add("Last-Modified: " + lastModified + CRLF);
 
-          long IfModSince = file.lastModified();
-          Calendar newCalendar = Calendar.getInstance();
-          newCalendar.setTimeInMillis(IfModSince);
-          String LastMod = formatter.format(newCalendar.getTime());
+          System.out.println("Last-Modified: " + lastModified + CRLF);
 
-          if (lastModified.equals(LastMod)) {
-            response.set(0, response(0));
-          } else {
-            response.set(0, response(1));
-          }
           String contentIncoding = "identity"; // content incoding
-          header += "Content-Encoding: " + contentIncoding + "\n";
+          response.add("Content-Encoding: " + contentIncoding + CRLF);
 
           String allow = "GET, POST, HEAD"; // allow
-          header += "Allow: " + allow + "\n";
+          response.add("Allow: " + allow + CRLF);
 
           Calendar now = Calendar.getInstance();
           now.set(Calendar.YEAR, (now.get(Calendar.YEAR) + 10));
           // System.out.println(formatter.format(now.getTime()));
           String expire = formatter.format(now.getTime()); // expire
-          header += "Expire: " + expire + "\n";
-
-          // writing the file
-          Scanner myReader = new Scanner(file);
-          while (myReader.hasNextLine()) {
-            String data = myReader.nextLine();
-            para += data + "\n";
-          }
-          header += "\n" + para;
-          response.add(header);
-          myReader.close();
-
-          // 200 ok
-          response.set(0, response(0));
+          response.add("Expires: " + expire + CRLF);
+          Response(response);
         } else {
           // Forbidden 403
-          response.set(0, response(3));
+          response.add("HTTP/1.0 " + response(3) + CRLF);
+          Response(response);
         }
       } else {
         // file dosent exist 404
-        response.set(0, response(4));
+        response.add("HTTP/1.0 " + response(4) + CRLF);
+        Response(response);
       }
-    } catch (FileNotFoundException e) {
+    } catch (Exception e) {
       System.out.println("An error occurred.");
       e.printStackTrace();
     }
-    return response;
+  }
+
+  public void Response(List<String> response) {
+    try {
+      PrintStream ps = new PrintStream(this.socket.getOutputStream());
+      if (response.size() < 6) {
+        System.out.println(response.size());
+        int curr = 0;
+        while (!response.isEmpty()) {
+          ps.printf("%s", response.get(curr));
+          curr++;
+        }
+      } else {
+        int curr = 0;
+        while (curr < 7) {
+          ps.printf("%s", response.get(curr));
+          curr++;
+        }
+        ps.printf("%s", CRLF);
+      }
+    } catch (IOException e) {
+      System.out.println("IO EXCEPTION");
+      e.printStackTrace();
+    }
+  }
+
+  public void Response(List<String> response, byte[] payload) {
+    try {
+      PrintStream ps = new PrintStream(this.socket.getOutputStream());
+      for(String x: response){
+        ps.printf("%s", x);
+      }
+      ps.printf("%s", CRLF);
+
+      // String payload = response.get(curr);
+      // byte[] content = response.get(curr);
+      ps.write(payload);
+
+      ps.printf("%s", CRLF);
+      ps.flush();
+    } catch (IOException e) {
+      System.out.println("IO EXCEPTION");
+      e.printStackTrace();
+    }
   }
 
   public String response(int i) {
@@ -484,4 +375,63 @@ class ServerThread extends Thread {
     }
     return statusCode;
   }
+
+  public String fileType(String filename) {
+    String filetype = "";
+    if (filename.split("\\.").length < 2) {
+      filetype = "application/octet-stream";
+    } else {
+      switch (filename.split("\\.")[1]) {
+        case "txt":
+          filetype = "text/plain";
+          break;
+        case "html":
+          filetype = "text/html";
+          break;
+        case "gif":
+          filetype = "image/gif";
+          break;
+        case "jpeg":
+          filetype = "image/jpeg";
+          break;
+        case "png":
+          filetype = "image/png";
+          break;
+        case "ocetet-stream":
+          filetype = "application/octet-stream";
+          break;
+        case "pdf":
+          filetype = "application/pdf";
+          break;
+        case "x-gzip":
+          filetype = "application/x-gzip";
+          break;
+        case "zip":
+          filetype = "application/zip";
+          break;
+        default:
+          filetype = "application/octet-stream";
+          break;
+      } // content-type is working
+    }
+    return filetype;
+  }
 }
+// StringBuilder sb = new StringBuilder();
+// Scanner myReader = new Scanner(file);
+// while (myReader.hasNextLine()) {
+//   sb.append(myReader.nextLine()).append('\n');
+// }
+// String payload = sb.toString();
+// response.add(payload);
+// myReader.close();
+
+ // long IfModSince = file.lastModified();
+          // Calendar newCalendar = Calendar.getInstance();
+          // newCalendar.setTimeInMillis(IfModSince);
+          // String LastMod = formatter.format(newCalendar.getTime());
+          // if (lastModified.equals(LastMod)) {
+          //   response.set(0, response(0));
+          // } else {
+          //   response.set(0, response(1));
+          // }
