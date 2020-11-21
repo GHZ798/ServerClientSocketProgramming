@@ -257,15 +257,8 @@ class ServerThread extends Thread {
       String expire = formatter.format(now.getTime()); // expire
       response.add("Expires: " + expire + CRLF);
 
-      System.out.println("Emplty?: " + response.isEmpty());
-      for (String x : response) {
-        System.out.println(x);
-      }
-
       StringBuilder sb = new StringBuilder();
       Process process = Runtime.getRuntime().exec(cmd, envVars, WORKING_DIR);
-
-      System.out.println("PAYLOAD 1");
 
       try (
         BufferedWriter bw = new BufferedWriter(
@@ -290,6 +283,13 @@ class ServerThread extends Thread {
         return;
       }
       String payload = sb.toString();
+      if(payload.trim().isEmpty()){
+        response.clear();
+        response.add("HTTP/1.0 " + Status(12) + CRLF);
+        Response(response);
+        return;
+      }
+
       System.out.println("PAYLOAD 1");
       System.out.println(payload);
 
@@ -303,8 +303,8 @@ class ServerThread extends Thread {
 
       byte[] responseBytes = payload.getBytes();
       System.out.println("RESULT ");
-      for (String x : response) {
-        System.out.println(x);
+      for (byte x : responseBytes) {
+        System.out.print(x);
       }
       Response(response, responseBytes);
     }
@@ -550,18 +550,21 @@ class ServerThread extends Thread {
       for (String x : response) {
         ps.printf("%s", x);
       }
+      System.out.println();
       System.out.println("INSIDE PAYLOAD OUTPUT: ");
+      System.out.println("SIZE: " + response.size());
 
       for (String x : response) {
-        System.out.println(x);
+        System.out.print(x);
       }
       ps.printf("%s", CRLF);
 
       // String payload = response.get(curr);
       // byte[] content = response.get(curr);
-      ps.write(payload);
-
-      ps.printf("%s", CRLF);
+      if(payload != null){
+        ps.write(payload);
+      }
+     
       ps.flush();
     } catch (IOException e) {
       System.out.println("IO EXCEPTION");
