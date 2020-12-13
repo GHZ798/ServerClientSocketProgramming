@@ -6,6 +6,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import javax.sound.midi.SysexMessage;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 // Server class when it accepts the connection gets a socket which it passes on to the Thread
 public class HTTP3Server {
@@ -543,6 +547,15 @@ class ServerThread extends Thread {
 
       response.add("Set-Cookie: lasttime=" + encodedDateTime + CRLF);
       int filelength = (int) file.length(); // file length
+
+      Path path = Paths.get("index_seen.html");
+      List<String> lines1 = Files.readAllLines(path, StandardCharsets.UTF_8);
+      String fileContent = "";
+      for(String x: lines1){
+        fileContent += x;
+      }
+      fileContent = fileContent.replace("%YEAR-%MONTH-%DAY %HOUR-%MINUTE-%SECOND", decodedDateTime);
+      filelength = (int) file.length();
 
       byte[] payload = new byte[filelength];
       BufferedInputStream bis = new BufferedInputStream(
